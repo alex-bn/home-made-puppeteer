@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "module": "commonjs",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "outDir": "dist",
+    "lib": ["ESNext", "dom", "dom.iterable"]
+  }
+}
