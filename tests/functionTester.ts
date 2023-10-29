@@ -24,7 +24,7 @@ describe("function tester", () => {
     await pageHelper.close();
   });
 
-  test("getElementByText", async () => {
+  test(".getElementByText()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
@@ -38,7 +38,7 @@ describe("function tester", () => {
       "Easy embedding into a Continuous integration system"
     );
   });
-  test("elementContainsText", async () => {
+  test(".elementContainsText()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
@@ -47,7 +47,7 @@ describe("function tester", () => {
     // assert
     assert.equal(result, true);
   });
-  test("countElements", async () => {
+  test(".countElements()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
@@ -55,7 +55,7 @@ describe("function tester", () => {
     // assert
     assert.equal(count, 5);
   });
-  test("isElementVisible", async () => {
+  test(".isElementVisible()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
@@ -63,7 +63,7 @@ describe("function tester", () => {
     // assert
     assert.equal(isVisible, false);
   });
-  test("loadPageAndExpectElement", async () => {
+  test(".loadPageAndExpectElement()", async () => {
     // arrange & act
     const loadingPageWasSuccessfulAndElementIsPresent = await pageHelper.loadPageAndExpectElement(
       url,
@@ -72,7 +72,7 @@ describe("function tester", () => {
     // assert
     assert.ok(loadingPageWasSuccessfulAndElementIsPresent, "Element was not found.");
   });
-  test("getElementByText", async () => {
+  test(".getElementByText()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
@@ -86,16 +86,21 @@ describe("function tester", () => {
       "Easy embedding into a Continuous integration system"
     );
   });
-  test("typeSlowly", async () => {
+  test(".typeSlowly()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     const typeHandle = await page.$("#developer-name");
+    const delay = 10; // milliseconds
     // act
+    const startTime = process.hrtime();
     await pageHelper.typeSlowly(
       typeHandle as ElementHandle<Element>,
       "some long text to be typed very slowly until boredom becomes the norm and pooping unicorns start singing Hallelujah",
-      0
+      delay
     );
+    const endTime = process.hrtime(startTime);
+    const duration = endTime[0] + endTime[1] / 1e9; // Convert to seconds
     // assert
+    assert.ok(duration < 1.35, "Your dummy test has failed."); // should give ~1.3
   });
 });
