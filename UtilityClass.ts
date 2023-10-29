@@ -53,8 +53,6 @@ export default class UtilityClass {
   async close(): Promise<void> {
     if (this.browser) {
       await this.browser.close();
-    } else {
-      console.log("Browser variable is null, closing operation must be done manually.");
     }
   }
 
@@ -222,13 +220,14 @@ export default class UtilityClass {
    * Simulates slow typing of a specified text into an HTML element and waits for network idle.
    * @param {ElementHandle} elementHandle - The element to type text into.
    * @param {string} text - The text to type into the element.
+   * @param {number} delay - Delay in milliseconds.
    */
-  async typeSlowly(elementHandle: ElementHandle, text: string): Promise<void> {
+  async typeSlowly(elementHandle: ElementHandle, text: string, delay: number): Promise<void> {
     if (!this.page) {
       throw new Error("Page is not available. Please call initiate or provide a page object.");
     }
     try {
-      await Promise.all([elementHandle.type(text, { delay: 100 }), this.page.waitForNetworkIdle()]);
+      await Promise.all([elementHandle.type(text, { delay }), this.page.waitForNetworkIdle()]);
     } catch (error) {
       console.log("Error in typeSlowly:", error);
       throw error;
