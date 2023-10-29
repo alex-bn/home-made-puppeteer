@@ -142,12 +142,14 @@ export default class UtilityClass {
 
   /**
    * @async
-   * Finds and returns an HTML element in the current page using an XPath expression
-   * that matches the element containing the specified text.
+   * Evaluates an XPath expression relative to the page document, searches for the first HTML element
+   * containing the specified text, waits for it to become visible and for the network to idle,
+   * and returns the matching element.
    * @param {string} xpathSelector - The XPath expression for the element to find.
    * @param {string} text - The text content to look for within the element.
-   * @returns {Promise<ElementHandle<Element>>} A promise that resolves to an ElementHandle
-   * representing the found HTML element.
+   * @throws {Error} Throws an error if the page is not available, if the element with the specified
+   * text is not found, or if the element is not visible.
+   * @returns {Promise<ElementHandle<Element>>} A promise that resolves to the matching HTML element.
    */
   async getElementByText(xpathSelector: string, text: string): Promise<ElementHandle<Element>> {
     if (!this.page) {

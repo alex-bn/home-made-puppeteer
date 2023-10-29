@@ -36,8 +36,8 @@ const url = "https://devexpress.github.io/testcafe/example/";
     assert.ok(loadingPageWasSuccessfulAndElementIsPresent, "Element was not found.");
 
     const el = await pageHelper.getElementByText(
-      "/html/body/form/div/div[1]/div[1]/fieldset[2]/p[1]/label",
-      "remote"
+      "/html/body/form/div/div[1]/div[1]/fieldset[2]/p/label",
+      "Continuous integration"
     );
     console.log(await el.evaluate((el) => el.textContent, el));
 
