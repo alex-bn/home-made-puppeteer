@@ -1,39 +1,51 @@
 // import puppeteer, { ElementHandle } from "puppeteer";
 import puppeteer, { ElementHandle } from "puppeteer";
 import UtilityClass from "./UtilityClass";
+import assert from "node:assert";
 
-const pageHelper = new UtilityClass({
-  headless: false,
-  defaultViewport: null,
-});
-
+const pageHelper = new UtilityClass();
+const url = "https://devexpress.github.io/testcafe/example/";
 // tests
 (async function () {
   const browser = await puppeteer.launch({ headless: false, defaultViewport: null });
   const [page] = await browser.pages();
 
   try {
-    // await pageHelper.initiate();
-    await pageHelper.loadPage("https://yopmail.com/en/wm", { waitUntil: "networkidle2" }, page);
+    await pageHelper.initiate(page);
+    await pageHelper.loadPage(url, {
+      waitUntil: "networkidle2",
+    });
 
-    await pageHelper.waitAndClick("#accept");
+    const elHandle = await page.$("#main-form > div > header > p");
+    const result = await pageHelper.elementContainsText(elHandle as ElementHandle<Element>, "TestCafe");
+    assert.equal(result, true);
 
-    const handle = await page.$("#login");
+    const count = await pageHelper.countElements("fieldset:nth-child(2) > p");
+    assert.equal(count, 5);
 
-    await pageHelper.typeIntoElement(handle as ElementHandle<HTMLInputElement>, "test");
+    const isVisible = await pageHelper.elementIsVisible("div > #testcafe-rank");
+    assert.equal(isVisible, false);
+    const visHandle = await page.$("div > #testcafe-rank");
+    const isVisible2 = await visHandle?.isIntersectingViewport();
+    assert.equal(isVisible2, false);
 
-    await page.keyboard.press("Enter"); // *
-
-    // overkill ?
-    const el = await pageHelper.waitForSelector(
-      ["body > header > div:nth-child(3) > div:nth-child(3)"],
-      "#ifmail"
+    const loadingPageWasSuccessfulAndElementIsPresent = await pageHelper.loadPageAndExpectElement(
+      url,
+      "#tried-section > label"
     );
+    assert.ok(loadingPageWasSuccessfulAndElementIsPresent, "Element was not found.");
 
-    const text = await el?.evaluate((el) => el?.lastChild?.textContent?.trim());
-    console.log(text);
+    const el = await pageHelper.getElementByText(
+      "/html/body/form/div/div[1]/div[1]/fieldset[2]/p[1]/label",
+      "remote"
+    );
+    console.log(await el.evaluate((el) => el.textContent, el));
 
-    await pageHelper.loadPage("https://example.com", { waitUntil: "networkidle2" });
+    const typeHandle = await page.$("#developer-name");
+    await pageHelper.typeSlowly(
+      typeHandle as ElementHandle<Element>,
+      "some long text to be type very slowly until boredom becomes the norm and pooping unicorns start singing Hallelujah"
+    );
   } catch (error) {
     console.log(error);
   } finally {
