@@ -197,10 +197,15 @@ export default class UtilityClass {
    * Clears the existing text and types into an HTMLInputElement field.
    * @param {ElementHandle<HTMLInputElement>} elementHandle - ElementHandle representing an in-page DOM input element.
    * @param {string} value - The value to set for the element.
+   * @param {number} delay - Delay in milliseconds.
    * @example
    * await pageHelper.typeIntoElement(elHandle as ElementHandle<HTMLInputElement>, "your-text-here");
    */
-  async typeIntoElement(elementHandle: ElementHandle<HTMLInputElement>, value: string): Promise<void> {
+  async typeIntoElement(
+    elementHandle: ElementHandle<HTMLInputElement>,
+    value: string,
+    delay?: number
+  ): Promise<void> {
     const textToType = await elementHandle.evaluate((input, newValue) => {
       if (newValue.length <= input.value.length || !newValue.startsWith(input.value)) {
         input.value = "";
@@ -212,7 +217,7 @@ export default class UtilityClass {
       return newValue.substring(originalValue.length);
     }, value);
 
-    await elementHandle.type(textToType, { delay: 100 });
+    await elementHandle.type(textToType, { delay });
   }
 
   /**
