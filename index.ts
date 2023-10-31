@@ -17,9 +17,8 @@ const url1 = "https://devexpress.github.io/testcafe/example/";
     // arrange
     await pageHelper.loadPage(url1);
     // act
-    const attr = await pageHelper.getAttribute(`[data-testid="populate-button"]`, "data-testid");
-    // assert
-    // assert.equal(attr, "Populate");
+    const handle = await page.$(`[data-testid="populate-button"]`);
+    const attr = await pageHelper.getCSSProps(handle as ElementHandle<Element>);
     console.log(attr);
   } catch (error) {
     console.log(error);

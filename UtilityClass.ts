@@ -473,4 +473,32 @@ export default class UtilityClass {
       console.log("Error in getAttribute:", error);
     }
   }
+
+  /**
+   * @async Get CSS properties of a given element.
+   * @param {ElementHandle} elementHandle - ElementHandle representing an in-page DOM input element.
+   */
+  async getCSSProps(elementHandle: ElementHandle) {
+    if (!this.page) {
+      throw new Error("Page is not available. Please call initiate or provide a page object.");
+    }
+    if (elementHandle) {
+      // Get the CSS properties of the selected element
+      const elementCSS = await this.page.evaluate((element) => {
+        const style = getComputedStyle(element) as CSSStyleDeclaration;
+        const computedProperties: { [key: string]: string } = {};
+        for (const property in style) {
+          if (style.hasOwnProperty(property)) {
+            const value = style.getPropertyValue(property);
+            if (value) {
+              computedProperties[property] = value;
+            }
+          }
+        }
+        return computedProperties;
+      }, elementHandle);
+
+      return elementCSS;
+    } else return null;
+  }
 }
