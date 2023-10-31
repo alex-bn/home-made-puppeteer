@@ -101,31 +101,6 @@ export default class UtilityClass {
 
   /**
    * @async
-   * Loads a page and waits for the specified element to appear.
-   * @param {string} url - The URL to load.
-   * @param {string} elementSelector - The selector for the element to wait for.
-   * @param {number} timeout - (Optional) The maximum time to wait for the element (in milliseconds).
-   * @returns {Promise<boolean>} A promise that resolves to true if the element is found, or false if not.
-   */
-  async loadPageAndExpectElement(url: string, elementSelector: string, timeout = 30000): Promise<boolean> {
-    if (!this.page) {
-      throw new Error("Page is not available. Please call initiate or provide a page object.");
-    }
-
-    try {
-      await Promise.all([
-        this.page.goto(url, { waitUntil: "domcontentloaded" }),
-        this.page.waitForSelector(elementSelector, { timeout }),
-      ]);
-      return true; // Element was found.
-    } catch (error) {
-      console.log("Error in loadPageAndExpectElement:", error);
-      return false; // Element was not found or other error occurred.
-    }
-  }
-
-  /**
-   * @async
    * Returns the ElementHandle for the node that matches the selector, or resolves to null if not found.
    * @param {string} selector - The selector of the element to retrieve.
    * @returns {Promise<ElementHandle | null>} The ElementHandle of the matching element, or null if not found.
@@ -222,26 +197,7 @@ export default class UtilityClass {
 
   /**
    * @async
-   * Simulates slow typing of a specified text into an HTML element and waits for network idle.
-   * @param {ElementHandle} elementHandle - The element to type text into.
-   * @param {string} text - The text to type into the element.
-   * @param {number} delay - Delay in milliseconds.
-   */
-  async typeSlowly(elementHandle: ElementHandle, text: string, delay: number): Promise<void> {
-    if (!this.page) {
-      throw new Error("Page is not available. Please call initiate or provide a page object.");
-    }
-    try {
-      await Promise.all([elementHandle.type(text, { delay }), this.page.waitForNetworkIdle()]);
-    } catch (error) {
-      console.log("Error in typeSlowly:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * @async
-   * This function is designed to be versatile and handle different scenarios where you might need to locate elements within frames or perform a sequence of searches. It also provides comprehensive error handling if the elements are not found.
+   * Locate elements within frames or perform a sequence of searches.
    * @param {string[] | string} selector - The selector of the element to find.
    * @param {string} frameSelector - The selector of the frame element where the search will be performed (optional).
    * @param {WaitForSelectorOptions} options - (Optional) Wait for selector properties object.
@@ -361,7 +317,7 @@ export default class UtilityClass {
 
   /**
    * @async
-   * Checks if an element with the given selector is visible on the current page.
+   * Accounts for visibility hidden, display none, opacity 0, width 0, offscreen, removed/not found and overlapped elements
    * @param {string} selector - The selector of the element to check.
    * @returns {Promise<boolean>} A promise that resolves to true if the element is visible, or false if not.
    */
@@ -369,32 +325,152 @@ export default class UtilityClass {
     if (!this.page) {
       throw new Error("Page is not available. Please call initiate or provide a page object.");
     }
-
     try {
-      const isElementVisible = await this.page.$eval(selector, (uiElement) => {
-        if (uiElement) {
+      const element = await this.page.$(selector);
+      if (element) {
+        const isElementVisible = await this.page.evaluate((uiElement) => {
           const style = getComputedStyle(uiElement);
           const rect = uiElement.getBoundingClientRect();
+          const isHidden =
+            style.visibility === "hidden" ||
+            style.display === "none" ||
+            style.opacity === "0" ||
+            rect.width === 0;
+          const isOffscreen =
+            rect.bottom < 0 ||
+            rect.top > window.innerHeight ||
+            rect.right < 0 ||
+            rect.left > window.innerWidth;
 
-          return style.visibility !== "hidden" && !!(rect.bottom || rect.top || rect.height || rect.width);
-        }
-        return false; // Handle the case when uiElement is null
-      });
+          if (isHidden || isOffscreen) {
+            return false;
+          }
 
-      return isElementVisible;
+          // Check for overlapping elements with higher z-index or absolute/fixed positioning
+          const overlappingElements = Array.from(
+            document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+          );
+          const isOverlapped = overlappingElements.some((el) => {
+            const elStyle = getComputedStyle(el);
+            return (
+              (el !== uiElement && elStyle.position === "absolute") ||
+              elStyle.position === "fixed" ||
+              elStyle.zIndex > style.zIndex
+            );
+          });
+
+          return !isOverlapped;
+        }, element);
+
+        return isElementVisible;
+      } else {
+        return false;
+      }
     } catch (error) {
       console.log("Error in elementIsVisible:", error);
       return false;
     }
   }
-  // maybe this is overkill and i should use
-  // class ElementHandle {
-  //   isIntersectingViewport(
-  //     this: ElementHandle<Element>,
-  //     options?: {
-  //       threshold?: number;
-  //     }
-  //   ): Promise<boolean>;
-  // }
-  // to test
+
+  /**
+   * @async
+   * Uses a polling approach with a one-second sleep between retries.
+   * @param {string} selector - The selector of the element to check.
+   * @param {number} timeout - The maximum time (in milliseconds) to wait for the element to become available.
+   */
+  async waitForElement(selector: string, timeout: number) {
+    if (!this.page) {
+      throw new Error("Page is not available. Please call initiate or provide a page object.");
+    }
+    while (timeout > 0) {
+      try {
+        return await this.page.waitForSelector(selector, {
+          visible: true,
+          timeout: 1000,
+        });
+      } catch (e) {
+        await this.sleep(1000);
+        timeout -= 1000;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Provides a way to check if an element is disabled.
+   * @param {string} selector - The selector of the element to check.
+   * @param {number} timeout - The maximum time (in milliseconds) to check for the element.
+   */
+  async isDisabled(selector: string, timeout: number) {
+    if (!this.page) {
+      throw new Error("Page is not available. Please call initiate or provide a page object.");
+    }
+    try {
+      const isDisabled = await this.page.waitForSelector(`${selector}[disabled]`, {
+        timeout,
+      });
+      if (isDisabled) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // maybe too much ?
+  async isElementReady(selector: string) {
+    if (!this.page) {
+      throw new Error("Page is not available. Please call initiate or provide a page object.");
+    }
+    try {
+      const elementHandle = await this.page.$(selector);
+      const isVisibleHandle = await this.page.evaluateHandle((e) => {
+        const style = window.getComputedStyle(e as Element);
+        return style && style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+      }, elementHandle);
+      const visible = await isVisibleHandle.jsonValue();
+      const box = await elementHandle?.boxModel();
+
+      if (visible && box) {
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /**
+   * @async Returns the text content of a given selector.
+   * @param {string} selector - The selector of the element to check.
+   */
+  async getTextContent(selector: string) {
+    if (!this.page) {
+      throw new Error("Page is not available. Please call initiate or provide a page object.");
+    }
+    try {
+      const elementHandle = await this.page.$(selector);
+      return (await elementHandle?.evaluate((el) => el.textContent))?.trim();
+    } catch (error) {
+      console.log("Error in getTextContent:", error);
+    }
+  }
+
+  /**
+   * @async Returns the value of an element's attribute.
+   * @param {string} selector - The selector of the element to check.
+   * @param {string} attribute - Attribute of the given element.
+   */
+  async getAttribute(selector: string, attribute: string) {
+    if (!this.page) {
+      throw new Error("Page is not available. Please call initiate or provide a page object.");
+    }
+    try {
+      return await this.page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
+    } catch (error) {
+      console.log("Error in getAttribute:", error);
+    }
+  }
 }

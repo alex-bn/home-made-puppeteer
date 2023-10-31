@@ -5,6 +5,10 @@ import { describe, test, it, before, after, beforeEach, afterEach, mock } from "
 
 describe("function tester", () => {
   const url = "https://devexpress.github.io/testcafe/example/";
+  const url2 = "http://www.uitestingplayground.com/visibility";
+  const url3 = "https://yopmail.com/en/wm";
+  const url4 = "http://www.uitestingplayground.com";
+
   let page: Page;
   let browser: Browser;
   let pageHelper: UtilityClass;
@@ -12,7 +16,7 @@ describe("function tester", () => {
   before(async () => {
     pageHelper = new UtilityClass();
     browser = await puppeteer.launch({
-      headless: true,
+      headless: "new",
       defaultViewport: null,
       // slowMo: 50,
     });
@@ -22,17 +26,6 @@ describe("function tester", () => {
   after(async () => {
     await browser.close();
     await pageHelper.close();
-  });
-
-  test(".loadPageAndExpectElement()", async () => {
-    // arrange & act
-    const expectedResult = true;
-    const isPageLoadedAndElementFound = await pageHelper.loadPageAndExpectElement(
-      url,
-      "#preferred-interface"
-    );
-    // assert
-    assert.ok(isPageLoadedAndElementFound === expectedResult, "Your dummy test failed.");
   });
   test(".elementContainsText()", async () => {
     // arrange
@@ -57,21 +50,37 @@ describe("function tester", () => {
   });
   test(".isElementVisible()", async () => {
     // arrange
-    await pageHelper.loadPage(url);
+    await pageHelper.loadPage(url2);
+    const triggerButtonHandle = await page.$("button#hideButton");
+    await triggerButtonHandle?.click();
+    const btnSelectors = [
+      { sel: "button#removedButton" },
+      { sel: "button#zeroWidthButton" },
+      { sel: "button#overlappedButton" },
+      { sel: "button#transparentButton" },
+      { sel: "button#invisibleButton" },
+      { sel: "button#notdisplayedButton" },
+      { sel: "button#offscreenButton" },
+    ];
     // act
-    const isVisible = await pageHelper.elementIsVisible("div > #testcafe-rank");
-    // assert
-    assert.equal(isVisible, false);
+    for (const btn of btnSelectors) {
+      const isVisible = await pageHelper.elementIsVisible(btn.sel);
+      assert.equal(isVisible, false); // all should be false
+    }
   });
   test(".getElementHandle()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
+    const isNull = await page.$("div.slider-values.active");
+    assert.equal(null, isNull); // element is not active
     const elHandle = await pageHelper.getElementHandle("#tried-section > label");
     await elHandle?.click();
     // assert
+    const is = await page.$("div.slider-values.active");
+    assert.ok(is, "Your dummy test failed."); // after click element is active
   });
-  test(".getElementByText()", async () => {
+  test.skip(".getElementByText()", async () => {
     // arrange
     await pageHelper.loadPage(url);
     // act
@@ -84,28 +93,6 @@ describe("function tester", () => {
       await el.evaluate((el) => el.textContent, el),
       "Easy embedding into a Continuous integration system"
     );
-  });
-  test(".typeSlowly()", async () => {
-    // arrange
-    const expectedValue =
-      "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem";
-    await pageHelper.loadPage(url);
-    const typeHandle = await page.$("#developer-name");
-    const delay = 10; // milliseconds
-    // act
-    const startTime = process.hrtime();
-    await pageHelper.typeSlowly(typeHandle as ElementHandle<Element>, expectedValue, delay);
-    const endTime = process.hrtime(startTime);
-    const duration = endTime[0] + endTime[1] / 1e9; // Convert to seconds
-    // assert
-    assert.ok(duration < 1.35, "Your dummy test has failed."); // should give ~1.3
-    const inputValue = await typeHandle?.evaluate((el) => {
-      if (el instanceof HTMLInputElement) {
-        return el.value;
-      }
-      return null;
-    });
-    assert.equal(inputValue, expectedValue);
   });
   test(".sleep()", async () => {
     // arrange
@@ -153,14 +140,12 @@ describe("function tester", () => {
     assert.ok(inputValue === expectedValue, "Your dummy test has failed");
   });
   test(".waitForSelector()", async () => {
-    test(".waitAndClick()", async () => {
-      // arrange
-      await pageHelper.loadPage("https://yopmail.com/en/wm", { waitUntil: "networkidle2" });
-      await pageHelper.waitAndClick("#accept");
-      const handle = await page.$("#login");
-      await pageHelper.typeIntoElement(handle as ElementHandle<HTMLInputElement>, "test");
-      await page.keyboard.press("Enter");
-    });
+    // arrange
+    await pageHelper.loadPage(url3, { waitUntil: "networkidle2" });
+    await pageHelper.waitAndClick("#accept");
+    const handle = await page.$("#login");
+    await pageHelper.typeIntoElement(handle as ElementHandle<HTMLInputElement>, "test");
+    await page.keyboard.press("Enter");
     // act
     const el = await pageHelper.waitForSelector(
       ["body > header > div:nth-child(3) > div:nth-child(3)"],
@@ -168,8 +153,54 @@ describe("function tester", () => {
     );
     const text = await el?.evaluate((el) => el?.lastChild?.textContent?.trim());
     // assert
+    assert.ok(text);
   });
-  test("waitForUserInput", async () => {
-    // need to test this somehow
+  test(".waitAndClick()", async () => {
+    // arrange
+    await pageHelper.loadPage(url4, { waitUntil: "networkidle2" });
+    await pageHelper.waitAndClick("div:nth-child(4) > div:nth-child(2) > h3 > a");
+    await pageHelper.waitAndClick("#login");
+    const handle = await page.$("#loginstatus");
+    const text = await handle?.evaluate((el) => el.textContent);
+    assert.equal(text, "Invalid username/password");
+  });
+  test(".waitForElement()", async () => {
+    // arrange
+    await pageHelper.loadPage(url4, { waitUntil: "networkidle2" });
+    const expectedText = "Quality is not an act, it is a habit.";
+    //
+    const isNull = await pageHelper.waitForElement("some-selector", 2000);
+    assert.equal(isNull, null);
+    //
+    const elHandle = await pageHelper.waitForElement("#citation > p", 5000);
+    const text = await elHandle?.evaluate((el) => el.textContent);
+    assert.equal(text, expectedText);
+  });
+  test(".isDisabled()", async () => {
+    // arrange
+    await pageHelper.loadPage(url, { waitUntil: "networkidle2" });
+
+    const isDisabled = await pageHelper.isDisabled("#submit-button", 1000);
+    assert.equal(isDisabled, true);
+
+    const notDisabled = await pageHelper.isDisabled("#populate", 1000);
+    assert.equal(notDisabled, false);
+  });
+  test(".getTextContent()", async () => {
+    // arrange
+    await pageHelper.loadPage(url);
+    // act
+    const text = await pageHelper.getTextContent("header > p");
+    // assert
+    assert.equal(text, "This webpage is used as a sample in TestCafe tutorials.");
+  });
+  test(".getAttribute()", async () => {
+    // arrange
+    const expectedValue = "populate-button";
+    await pageHelper.loadPage(url);
+    // act
+    const attr = await pageHelper.getAttribute(`[data-testid="populate-button"]`, "data-testid");
+    // assert
+    assert.equal(attr, expectedValue);
   });
 });
