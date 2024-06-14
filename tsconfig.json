@@ -3,11 +3,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "target": "ESNext",
-    "module": "commonjs",
-    "allowJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "strict": true,
-    "outDir": "dist",
-    "lib": ["ESNext", "dom", "dom.iterable"]
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmit": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
