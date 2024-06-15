@@ -205,7 +205,7 @@ export default class UtilityClass {
           visible: true,
           timeout: 1000,
         });
-      } catch (e) {
+      } catch (_) {
         await this.sleep(1000);
         timeout -= 1000;
       }
@@ -223,7 +223,7 @@ export default class UtilityClass {
       const elementHandle = await page.$(selector);
       return (await elementHandle?.evaluate((el) => el.textContent))?.trim();
     } catch (error) {
-      console.error("Error in getTextContent:", error);
+      console.error(error);
     }
   }
 
@@ -327,12 +327,14 @@ export default class UtilityClass {
     return await page.evaluate(() => window.clickEvents);
   }
 
+  // verify checkbox
   async isCheckboxChecked(page: Page, selector: string) {
     return await page.$eval(selector, (checkbox) => {
       return (checkbox as HTMLInputElement).checked;
     });
   }
 
+  // inline css
   /**
    * Gets the value of an inline style property from a specified element.
    * @param page - The Puppeteer Page object.
@@ -345,17 +347,18 @@ export default class UtilityClass {
       return await page.$eval(
         selector,
         (el, prop) => {
-          // @ts-ignore
-          return el.style.getPropertyValue(prop);
+          const element = el as HTMLElement;
+          return element.style.getPropertyValue(prop);
         },
         property
       );
     } catch (error) {
-      console.error("Error in getInlineStylePropertyValue:", error);
+      console.error(error);
       return null;
     }
   }
 
+  // computed css
   /**
    * @async Get CSS properties of a given element.
    * @param {string} selector - The CSS selector of the element.
@@ -388,16 +391,6 @@ export default class UtilityClass {
   //////////////////////////////////////
 
   // ?
-  async getElementHandle(page: Page, selector: string): Promise<ElementHandle | undefined> {
-    try {
-      const elementHandle = await page.$(selector);
-      if (elementHandle) return elementHandle;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  // ?
   /**
    * Gets the value of an attribute from a specified element.
    * @param page - The Puppeteer Page object.
@@ -409,7 +402,7 @@ export default class UtilityClass {
     try {
       return await page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
     } catch (error) {
-      console.error("Error in getAttribute:", error);
+      console.error(error);
       return null;
     }
   }

@@ -66,7 +66,7 @@ describe("uiTestingPlayground - Test scenarios", () => {
     await page.hover('a[title="Click me"]');
 
     // #3 - get element
-    const clickMeElement = await pageHelper.getElementHandle(page, 'a[title="Active Link"]');
+    const clickMeElement = await page.$('a[title="Active Link"]');
 
     // #4 - click
     const expectedClicks = 2;
