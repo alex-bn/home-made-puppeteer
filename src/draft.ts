@@ -13,10 +13,9 @@ async function main() {
     const page = await browser.newPage();
 
     // #
-    await page.goto(settings.testUrls.devExpress);
+    await page.goto(settings.testUrls.uiTestingPlayground);
 
     //
-    await pageHelper.sleep(99999999);
   } catch (error) {
     console.log(error);
   } finally {
