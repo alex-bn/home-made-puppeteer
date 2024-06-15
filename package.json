@@ -1,14 +1,15 @@
 {
-  "name": "pptr-test",
+  "name": "Sample test project",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
   "scripts": {
+    "uiTestingPlayground_only": "tsx --test-only ./src/tests/uiTestingPlayground.test.ts",
     "uiTestingPlayground": "tsx ./src/tests/uiTestingPlayground.test.ts",
-    "uiTestingPlayground_only": "tsx --test-only ./src/tests/uiTestingPlayground.test.ts"
+    "devexpress": "tsx ./src/tests/devexpress.test.ts"
   },
   "keywords": [],
-  "author": "AlexB",
+  "author": "Alexandru Bajan",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.14.2",

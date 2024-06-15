@@ -160,6 +160,15 @@ export default class UtilityClass {
     }
   }
 
+  // click & navigate
+  async waitAndNavigate(page: Page, selector: string): Promise<void> {
+    try {
+      await Promise.all([page.waitForNavigation(), page.click(selector)]);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   // useful when dealing with OTP
   /**
    * @async
@@ -318,40 +327,42 @@ export default class UtilityClass {
     return await page.evaluate(() => window.clickEvents);
   }
 
-  //////////////////////////////////////
-  // needs more testing and adjusting //
-  //////////////////////////////////////
-
-  // ?
-  async getElementHandle(page: Page, selector: string): Promise<ElementHandle | undefined> {
-    try {
-      const elementHandle = await page.$(selector);
-      if (elementHandle) return elementHandle;
-    } catch (error) {
-      console.error(error);
-    }
+  async isCheckboxChecked(page: Page, selector: string) {
+    return await page.$eval(selector, (checkbox) => {
+      return (checkbox as HTMLInputElement).checked;
+    });
   }
 
-  // ?
   /**
-   * @async Returns the value of an element's attribute.
-   * @param {string} selector - The selector of the element to check.
-   * @param {string} attribute - Attribute of the given element.
+   * Gets the value of an inline style property from a specified element.
+   * @param page - The Puppeteer Page object.
+   * @param selector - The CSS selector of the element.
+   * @param property - The CSS property whose value needs to be retrieved.
+   * @returns The value of the specified CSS property, or null if not found.
    */
-  async getAttributeValue(page: Page, selector: string, attribute: string) {
+  async getInlineStylePropertyValue(page: Page, selector: string, property: string): Promise<string | null> {
     try {
-      return await page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
+      return await page.$eval(
+        selector,
+        (el, prop) => {
+          // @ts-ignore
+          return el.style.getPropertyValue(prop);
+        },
+        property
+      );
     } catch (error) {
-      console.error("Error in getAttribute:", error);
+      console.error("Error in getInlineStylePropertyValue:", error);
+      return null;
     }
   }
 
-  // ?
   /**
    * @async Get CSS properties of a given element.
-   * @param {ElementHandle} elementHandle - ElementHandle representing an in-page DOM input element.
+   * @param {string} selector - The CSS selector of the element.
    */
-  async getCSSProps(page: Page, elementHandle: ElementHandle) {
+  async getComputedStyleProperties(page: Page, selector: string) {
+    const elementHandle = await page.$(selector);
+
     if (elementHandle) {
       // Get the CSS properties of the selected element
       const elementCSS = await page.evaluate((element) => {
@@ -370,6 +381,37 @@ export default class UtilityClass {
 
       return elementCSS;
     } else return null;
+  }
+
+  //////////////////////////////////////
+  // needs more testing and adjusting //
+  //////////////////////////////////////
+
+  // ?
+  async getElementHandle(page: Page, selector: string): Promise<ElementHandle | undefined> {
+    try {
+      const elementHandle = await page.$(selector);
+      if (elementHandle) return elementHandle;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // ?
+  /**
+   * Gets the value of an attribute from a specified element.
+   * @param page - The Puppeteer Page object.
+   * @param selector - The CSS selector of the element.
+   * @param attribute - The attribute whose value needs to be retrieved.
+   * @returns The value of the specified attribute, or null if not found.
+   */
+  async getAttributeValue(page: Page, selector: string, attribute: string): Promise<string | null> {
+    try {
+      return await page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
+    } catch (error) {
+      console.error("Error in getAttribute:", error);
+      return null;
+    }
   }
 
   // ?

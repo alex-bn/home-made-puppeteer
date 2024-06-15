@@ -3,7 +3,7 @@ import UtilityClass from "../utils/UtilityClass";
 import assert from "node:assert";
 import { describe, it, before, after, beforeEach, afterEach } from "node:test";
 import UserAgent from "user-agents";
-import settings from "./settings.json";
+import settings from "./_settings.json";
 
 describe("uiTestingPlayground - Test scenarios", () => {
   let page: Page;
@@ -31,6 +31,7 @@ describe("uiTestingPlayground - Test scenarios", () => {
     }
   });
 
+  // can run in isolation
   it("Scenario: Click", async () => {
     // http://www.uitestingplayground.com/click
 
@@ -405,50 +406,28 @@ describe("uiTestingPlayground - Test scenarios", () => {
 
     // #2 - selectors
     const hideBtn = "#hideButton";
-    const transparent = "#transparentButton";
-    const removed = "#removedButton";
-    const invisible = "#invisibleButton";
-    const notDisplayed = "#notdisplayedButton";
-    const zeroWidth = "#zeroWidthButton";
-    const overlapped = "#overlappedButton";
-    const offScreen = "#offscreenButton";
+    const hiddenButtons = [
+      "#transparentButton",
+      "#removedButton",
+      "#invisibleButton",
+      "#notdisplayedButton",
+      "#zeroWidthButton",
+      "#overlappedButton",
+      "#offscreenButton",
+    ];
 
     // #3 - press hide
     await page.click(hideBtn);
 
-    // #4 - test visibility
-
-    // visible
+    // #4 - test visible button
     const isNotHidden = await pageHelper.elementIsVisible(page, hideBtn);
     assert.equal(isNotHidden, true);
 
-    // not visible
-    const transparentIsVisible = await pageHelper.elementIsVisible(page, transparent);
-    assert.equal(transparentIsVisible, false);
-
-    // not visible
-    const removedIsVisible = await pageHelper.elementIsVisible(page, removed);
-    assert.equal(removedIsVisible, false);
-
-    // not visible
-    const isInvisibleVisible = await pageHelper.elementIsVisible(page, invisible);
-    assert.equal(isInvisibleVisible, false);
-
-    // not visible
-    const isNotDisplayedVisible = await pageHelper.elementIsVisible(page, notDisplayed);
-    assert.equal(isNotDisplayedVisible, false);
-
-    // not visible
-    const isZeroWidthVisible = await pageHelper.elementIsVisible(page, zeroWidth);
-    assert.equal(isZeroWidthVisible, false);
-
-    // not visible
-    const isOverlappedVisible = await pageHelper.elementIsVisible(page, overlapped);
-    assert.equal(isOverlappedVisible, false);
-
-    // not visible
-    const isOffScreenVisible = await pageHelper.elementIsVisible(page, offScreen);
-    assert.equal(isOffScreenVisible, false);
+    // #5 test not visible buttons
+    for (const button of hiddenButtons) {
+      const isVisible = await pageHelper.elementIsVisible(page, button);
+      assert.equal(isVisible, false);
+    }
   });
 
   it("Scenario: Scrollbars", async () => {

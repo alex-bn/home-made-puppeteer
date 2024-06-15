@@ -1,6 +1,6 @@
 import puppeteer, { Browser } from "puppeteer";
 import UtilityClass from "./utils/UtilityClass";
-import settings from "./tests/settings.json";
+import settings from "./tests/_settings.json";
 import assert from "node:assert";
 
 const pageHelper = new UtilityClass();

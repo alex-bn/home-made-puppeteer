@@ -4,7 +4,7 @@
     "devExpress": "https://devexpress.github.io/testcafe/example/"
   },
   "puppeteerLaunchOptions": {
-    "headless": true,
+    "headless": false,
     "defaultViewport": null,
     "slowMo": 0
   }
