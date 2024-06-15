@@ -1,6 +1,7 @@
 {
   "testUrls": {
-    "uiTestingPlayground": "http://www.uitestingplayground.com"
+    "uiTestingPlayground": "http://www.uitestingplayground.com",
+    "devExpress": "https://devexpress.github.io/testcafe/example/"
   },
   "puppeteerLaunchOptions": {
     "headless": true,

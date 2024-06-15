@@ -1,7 +1,20 @@
-import { ElementHandle, GoToOptions, Page, WaitForSelectorOptions } from "puppeteer";
+import { ElementHandle, GoToOptions, Page } from "puppeteer";
 import readline from "node:readline";
 
-// if you need to bind the function to the instance (e.g., if you plan to use it as a callback), using a function expression assigned to a class property can be more appropriate
+// extend the global Window interface to include clickEvents
+declare global {
+  interface Window {
+    clickEvents: Array<{
+      timestamp: number;
+      x: number;
+      y: number;
+      target: string;
+      targetId: string;
+      targetClass: string;
+    }>;
+  }
+}
+
 export default class UtilityClass {
   ///////////////////////
   // tested & adjusted //
@@ -52,23 +65,64 @@ export default class UtilityClass {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  // check if element is not obstructed by another
-  async isNotObstructed(page: Page, selector: string) {
-    return await page.evaluate((selector) => {
-      const element = document.querySelector(selector);
-      if (!element) return false;
+  // is element visible ?
+  /**
+   * Checks if an element is visible and not obstructed on the page.
+   *
+   * This function performs several checks to determine the visibility of the element:
+   * - Verifies if the element is hidden via CSS properties (visibility, display, opacity).
+   * - Checks if the element is offscreen.
+   * - Ensures the center of the element is not obstructed by other elements.
+   *
+   * @param {Page} page - The Puppeteer Page object.
+   * @param {string} selector - The CSS selector of the element to check.
+   * @returns {Promise<boolean>} - Returns true if the element is visible and not obstructed, false otherwise.
+   */
+  async elementIsVisible(page: Page, selector: string): Promise<boolean> {
+    try {
+      const element = await page.$(selector);
+      if (element) {
+        const isElementVisible = await page.evaluate((uiElement) => {
+          const style = getComputedStyle(uiElement);
+          const rect = uiElement.getBoundingClientRect();
+          const isHidden =
+            style.visibility === "hidden" || style.display === "none" || style.opacity === "0" || rect.width === 0;
+          const isOffscreen =
+            rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth;
 
-      // Calculate Center Point:
-      const { top, left, bottom, right } = element.getBoundingClientRect();
-      const x = (left + right) / 2;
-      const y = (top + bottom) / 2;
+          if (isHidden || isOffscreen) {
+            return false;
+          }
 
-      // Check Element at Center Point:
-      const elementAtPoint = document.elementFromPoint(x, y);
+          // Calculate Center Point:
+          const { top, left, bottom, right } = rect;
+          const x = (left + right) / 2;
+          const y = (top + bottom) / 2;
 
-      // Verify Element Containment:
-      return element.contains(elementAtPoint);
-    }, selector);
+          // Check Element at Center Point:
+          const elementAtPoint = document.elementFromPoint(x, y);
+
+          // Verify Element Containment and Overlapping:
+          const isOverlapped = Array.from(document.elementsFromPoint(x, y)).some((el) => {
+            const elStyle = getComputedStyle(el);
+            return (
+              (el !== uiElement && elStyle.position === "absolute") ||
+              elStyle.position === "fixed" ||
+              elStyle.zIndex > style.zIndex
+            );
+          });
+
+          return uiElement.contains(elementAtPoint) && !isOverlapped;
+        }, element);
+
+        return isElementVisible;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
 
   // click & wait for network idle
@@ -102,7 +156,7 @@ export default class UtilityClass {
     try {
       await Promise.all([page.waitForSelector(selector), page.click(selector)]);
     } catch (error) {
-      console.error("waitAndClick", error);
+      console.error(error);
     }
   }
 
@@ -180,29 +234,41 @@ export default class UtilityClass {
     }
   }
 
-  //////////////////////////////////////
-  // needs more testing and adjusting //
-  //////////////////////////////////////
-
-  // ?
-  async isVisibleAndNotObstructed(page: Page, selector: string) {
-    return await page.evaluate((selector) => {
+  // scroll into view
+  async scrollElementIntoView(page: Page, selector: string): Promise<void> {
+    await page.evaluate((selector) => {
       const element = document.querySelector(selector);
-      if (!element) return false;
-
-      const rect = element.getBoundingClientRect();
-      const isVisible = !!(rect.top || rect.bottom || rect.width || rect.height);
-      if (!isVisible) return false;
-
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const elementAtPoint = document.elementFromPoint(centerX, centerY);
-
-      return element.contains(elementAtPoint);
+      if (element) {
+        element.scrollIntoView();
+      }
     }, selector);
   }
 
-  // ?
+  // type
+  async typeText(page: Page, selector: string, text: string): Promise<void> {
+    const selectorHandle = await page.waitForSelector(selector);
+    if (selectorHandle) {
+      await selectorHandle.type(text);
+    } else {
+      throw new Error(`Element not found for selector: ${selector}`);
+    }
+  }
+
+  // get input value
+  async getInputValue(page: Page, selector: string): Promise<string> {
+    const elementHandle = await page.waitForSelector(selector);
+    if (!elementHandle) {
+      throw new Error(`Element not found for selector: ${selector}`);
+    }
+
+    const value = await page.evaluate((element) => {
+      return (element as HTMLInputElement).value;
+    }, elementHandle);
+
+    return value;
+  }
+
+  // load url
   async loadPage(page: Page, url: string, options?: GoToOptions | undefined): Promise<void> {
     try {
       await Promise.all([page.goto(url, options), page.waitForResponse((response) => response.ok())]);
@@ -210,6 +276,51 @@ export default class UtilityClass {
       console.error(error);
     }
   }
+
+  // click event listener
+  /**
+   * Sets up a click event listener on the provided Puppeteer Page to record click events.
+   * @param page - The Puppeteer Page object where the click events will be recorded.
+   */
+  async setupClickEventsRecorder(page: Page): Promise<void> {
+    await page.evaluate(() => {
+      // Initialize clickEvents array on the global window object
+      window.clickEvents = [];
+
+      // Add an event listener to the document to capture all click events
+      document.addEventListener("click", (event) => {
+        const target = event.target as HTMLElement;
+        if (!target) return;
+
+        // Capture details about the click event
+        const clickDetails = {
+          timestamp: Date.now(),
+          x: event.clientX,
+          y: event.clientY,
+          target: target.tagName,
+          targetId: target.id,
+          targetClass: target.className,
+        };
+
+        // Store the click event details in the array
+        window.clickEvents.push(clickDetails);
+      });
+    });
+  }
+
+  // retrieves the recorded click
+  /**
+   * Retrieves the recorded click events from the Puppeteer Page.
+   * @param page - The Puppeteer Page object where the click events were recorded.
+   * @returns An array of recorded click events.
+   */
+  async getRecordedClickEvents(page: Page): Promise<any[]> {
+    return await page.evaluate(() => window.clickEvents);
+  }
+
+  //////////////////////////////////////
+  // needs more testing and adjusting //
+  //////////////////////////////////////
 
   // ?
   async getElementHandle(page: Page, selector: string): Promise<ElementHandle | undefined> {
@@ -222,190 +333,12 @@ export default class UtilityClass {
   }
 
   // ?
-  async changeInputValue(elementHandle: ElementHandle<HTMLInputElement>, value: string): Promise<void> {
-    await elementHandle.focus();
-    await elementHandle.evaluate((input, value) => {
-      input.value = value;
-      input.dispatchEvent(
-        new Event("input", {
-          bubbles: true,
-        })
-      );
-      input.dispatchEvent(
-        new Event("change", {
-          bubbles: true,
-        })
-      );
-    }, value);
-  }
-
-  // ?
-  async typeIntoElement(elementHandle: ElementHandle<HTMLInputElement>, value: string, delay?: number): Promise<void> {
-    const textToType = await elementHandle.evaluate((input, newValue) => {
-      if (newValue.length <= input.value.length || !newValue.startsWith(input.value)) {
-        input.value = "";
-        return newValue;
-      }
-      const originalValue = input.value;
-      input.value = "";
-      input.value = originalValue;
-      return newValue.substring(originalValue.length);
-    }, value);
-
-    await elementHandle.type(textToType, { delay });
-  }
-
-  // ?
-  /**
-   * @async
-   * Locate elements within frames or perform a sequence of searches.
-   * @param {string[] | string} selector - The selector of the element to find.
-   * @param {string} frameSelector - The selector of the frame element where the search will be performed (optional).
-   * @param {WaitForSelectorOptions} options - (Optional) Wait for selector properties object.
-   */
-  async waitForSelector(
-    page: Page,
-    selector: string[] | string,
-    frameSelector?: string,
-    options?: WaitForSelectorOptions
-  ): Promise<ElementHandle<Node>> {
-    if (!Array.isArray(selector)) {
-      selector = [selector];
-    }
-    if (!selector.length) {
-      throw new Error("Empty selector provided to waitForSelector");
-    }
-    let element = null;
-    for (let i = 0; i < selector.length; i++) {
-      const part = selector[i];
-      if (element) {
-        element = await element.waitForSelector(part, options);
-      } else if (frameSelector) {
-        const elHandle = await page?.waitForSelector(frameSelector);
-        if (elHandle) {
-          const frame = await elHandle.contentFrame();
-          element = await frame?.waitForSelector(part, options);
-        }
-      }
-      if (!element) {
-        throw new Error("Could not find element: " + selector.join(">>"));
-      }
-      if (i < selector.length - 1) {
-        element = (await element.evaluateHandle((el) => (el.shadowRoot ? el.shadowRoot : el))).asElement();
-      }
-    }
-    if (!element) {
-      throw new Error("Could not find element: " + selector.join("|"));
-    }
-    return element;
-  }
-
-  // ?
-  /**
-   * @async
-   * Performs a text-lookup and will return a boolean as the result.
-   * @param {ElementHandle} elementHandle - ElementHandle representing an in-page DOM input element.
-   * @param {string} expectedText - Expected lookup text.
-   * @example
-   * const result = await pageHelper.elementContainsText(elHandle as ElementHandle<Element>, "TestCafe");
-    assert.equal(result, true);
-   */
-  async elementContainsText(elementHandle: ElementHandle, expectedText: string): Promise<boolean> {
-    try {
-      const result = await elementHandle.evaluate((element: Element | null, text: string) => {
-        if (element instanceof HTMLElement && element.innerText.includes(text)) {
-          return true;
-        }
-        return false;
-      }, expectedText);
-
-      return result as boolean;
-    } catch (error) {
-      console.error("Error in elementContainsText:", error);
-      return false;
-    }
-  }
-
-  // ?
-  async countElements(page: Page, selector: string): Promise<number> {
-    return await page.$$eval(selector, (items) => items.length);
-  }
-
-  // ?
-  async elementIsVisible(page: Page, selector: string): Promise<boolean> {
-    try {
-      const element = await page.$(selector);
-      if (element) {
-        const isElementVisible = await page.evaluate((uiElement) => {
-          const style = getComputedStyle(uiElement);
-          const rect = uiElement.getBoundingClientRect();
-          const isHidden =
-            style.visibility === "hidden" || style.display === "none" || style.opacity === "0" || rect.width === 0;
-          const isOffscreen =
-            rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth;
-
-          // const centerX = rect.left + rect.width / 2;
-          // const centerY = rect.top + rect.height / 2;
-          // const elementAtPoint = document.elementFromPoint(centerX, centerY);
-
-          if (isHidden || isOffscreen) {
-            return false;
-          }
-
-          // Check for overlapping elements with higher z-index or absolute/fixed positioning
-          const overlappingElements = Array.from(
-            document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
-          );
-          const isOverlapped = overlappingElements.some((el) => {
-            const elStyle = getComputedStyle(el);
-            return (
-              (el !== uiElement && elStyle.position === "absolute") ||
-              elStyle.position === "fixed" ||
-              elStyle.zIndex > style.zIndex
-            );
-          });
-
-          return !isOverlapped;
-        }, element);
-
-        return isElementVisible;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error("Error in elementIsVisible:", error);
-      return false;
-    }
-  }
-
-  // ?
-  /**
-   * Provides a way to check if an element is disabled.
-   * @param {string} selector - The selector of the element to check.
-   * @param {number} timeout - The maximum time (in milliseconds) to check for the element.
-   */
-  async isDisabled(page: Page, selector: string, timeout: number) {
-    try {
-      const isDisabled = await page.waitForSelector(`${selector}[disabled]`, {
-        timeout,
-      });
-      if (isDisabled) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (_) {
-      return false;
-    }
-  }
-
-  // ?
   /**
    * @async Returns the value of an element's attribute.
    * @param {string} selector - The selector of the element to check.
    * @param {string} attribute - Attribute of the given element.
    */
-  async getAttribute(page: Page, selector: string, attribute: string) {
+  async getAttributeValue(page: Page, selector: string, attribute: string) {
     try {
       return await page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
     } catch (error) {
@@ -437,5 +370,10 @@ export default class UtilityClass {
 
       return elementCSS;
     } else return null;
+  }
+
+  // ?
+  async countElements(page: Page, selector: string): Promise<number> {
+    return await page.$$eval(selector, (items) => items.length);
   }
 }
