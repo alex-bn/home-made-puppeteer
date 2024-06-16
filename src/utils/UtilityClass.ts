@@ -386,6 +386,27 @@ export default class UtilityClass {
     } else return null;
   }
 
+  // page scroll
+  async scrollDown(page: Page) {
+    let prevHeight = -1;
+    let maxScrolls = 100;
+    let scrollCount = 0;
+
+    while (scrollCount < maxScrolls) {
+      await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
+
+      await this.sleep(1000);
+
+      let newHeight = (await page.evaluate("document.body.scrollHeight")) as number;
+
+      if (newHeight == prevHeight) {
+        break;
+      }
+      prevHeight = newHeight;
+      scrollCount = +1;
+    }
+  }
+
   //////////////////////////////////////
   // needs more testing and adjusting //
   //////////////////////////////////////

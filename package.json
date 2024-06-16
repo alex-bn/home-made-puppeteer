@@ -6,13 +6,15 @@
   "scripts": {
     "uiTestingPlayground_only": "tsx --test-only ./src/tests/uiTestingPlayground.test.ts",
     "uiTestingPlayground": "tsx ./src/tests/uiTestingPlayground.test.ts",
-    "devexpress": "tsx ./src/tests/devexpress.test.ts"
+    "devexpress": "tsx ./src/tests/devexpress.test.ts",
+    "infiniteScroll": "tsx ./src/tests/infiniteScroll.test"
   },
   "keywords": [],
   "author": "Alexandru Bajan",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.14.2",
+    "axios": "^1.7.2",
     "puppeteer": "^22.10.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

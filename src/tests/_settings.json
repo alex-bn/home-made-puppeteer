@@ -1,7 +1,8 @@
 {
   "testUrls": {
     "uiTestingPlayground": "http://www.uitestingplayground.com",
-    "devExpress": "https://devexpress.github.io/testcafe/example/"
+    "devExpress": "https://devexpress.github.io/testcafe/example/",
+    "infiniteAjaxScroll": "https://infiniteajaxscroll.com/examples/blocks/"
   },
   "puppeteerLaunchOptions": {
     "headless": true,
