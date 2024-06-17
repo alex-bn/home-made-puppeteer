@@ -2,7 +2,12 @@
   "testUrls": {
     "uiTestingPlayground": "http://www.uitestingplayground.com",
     "devExpress": "https://devexpress.github.io/testcafe/example/",
-    "infiniteAjaxScroll": "https://infiniteajaxscroll.com/examples/blocks/"
+    "infiniteAjaxScroll": "https://infiniteajaxscroll.com/examples/blocks/",
+    "automationExercise": {
+      "url": "https://automationexercise.com/api",
+      "email": "user647712@yopmail.com",
+      "password": "1234"
+    }
   },
   "puppeteerLaunchOptions": {
     "headless": true,

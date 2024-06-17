@@ -2,6 +2,7 @@ import puppeteer from "puppeteer";
 import assert from "assert/strict";
 import { Browser, Page, ConsoleMessage, HTTPResponse } from "puppeteer";
 
+// do you cors much ?
 export default class CORSPolicy {
   private browser: Browser | null;
   private page: Page | null;
@@ -27,6 +28,7 @@ export default class CORSPolicy {
     }
   }
 
+  // has to be post
   async blockedByCORSPolicy(apiUrl: string, host: string) {
     let browserCorsError: string = "";
 
@@ -65,6 +67,7 @@ export default class CORSPolicy {
     }
   }
 
+  // has to be post
   async CORSAllowedHost(apiUrl: string, expectedResponse: Record<string, any>, host: string) {
     let browserApiCallResponse: string = "";
 

@@ -34,7 +34,7 @@ export default class PuppeteerManager {
   }
 
   // # abstraction 3
-  public async puppeteerAsyncDisposer(testFunction: (page: Page, ...args: any[]) => Promise<void>, ...args: any[]) {
+  public async asyncDisposer(testFunction: (page: Page, ...args: any[]) => Promise<void>, ...args: any[]) {
     await this.withBrowser(async (browser) => {
       await this.withPage(async (page) => {
         await testFunction(page, ...args);
