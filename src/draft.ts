@@ -7,9 +7,13 @@ import { Product, ApiError } from "./tests/test-clients/automation-exercise/inte
 import Helpers from "./tests/test-clients/automation-exercise/Helpers";
 
 //
-const helpers = new Helpers();
+
+const pageHelper = new UtilityClass();
 async function main() {
   try {
+  
+
+  
   } catch (error) {
     console.log(error);
   }

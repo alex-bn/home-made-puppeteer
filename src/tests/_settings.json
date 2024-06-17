@@ -7,11 +7,16 @@
       "url": "https://automationexercise.com/api",
       "email": "user647712@yopmail.com",
       "password": "1234"
-    }
+    },
+    "tlsClientAuthentication": "https://server.cryptomix.com"
+  },
+  "certs": {
+    "alex.test": "C:/Users/Lisi/Desktop/UtilityClass/src/test-certs/alex.test.pfx"
   },
   "puppeteerLaunchOptions": {
     "headless": true,
     "defaultViewport": null,
-    "slowMo": 0
+    "slowMo": 0,
+    "ignoreHTTPSErrors": true
   }
 }
