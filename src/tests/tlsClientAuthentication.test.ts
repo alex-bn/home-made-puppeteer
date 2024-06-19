@@ -10,8 +10,6 @@ import https from "https";
 
 describe("TLS Client Authentication Test", () => {
   const TLS_TEST_URL = settings.testUrls.tlsClientAuthentication;
-  const CERT_PATH = settings.certs.cer;
-  const KEY_PATH = settings.certs.key;
   const PFX_PATH = settings.certs.pfx;
   const PFX_PASS = settings.certs.passwd;
 
@@ -44,9 +42,8 @@ describe("TLS Client Authentication Test", () => {
       // set req intercept
       await page.setRequestInterception(true);
 
-      // client cert files
-      const cert = fs.readFileSync(CERT_PATH);
-      const key = fs.readFileSync(KEY_PATH);
+      // client cert file
+      const pfx = fs.readFileSync(PFX_PATH);
 
       page.on("request", async (interceptedRequest) => {
         if (interceptedRequest.url() === TLS_TEST_URL) {
@@ -58,8 +55,8 @@ describe("TLS Client Authentication Test", () => {
               headers: interceptedRequest.headers(),
               data: interceptedRequest.postData(),
               httpsAgent: new https.Agent({
-                cert: cert,
-                key: key,
+                pfx,
+                passphrase: PFX_PASS,
               }),
             };
 
