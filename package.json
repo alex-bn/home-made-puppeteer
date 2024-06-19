@@ -6,11 +6,12 @@
   "scripts": {
     "uiTestingPlayground_only": "tsx --test-only ./src/tests/uiTestingPlayground.test.ts",
     "uiTestingPlayground": "tsx ./src/tests/uiTestingPlayground.test.ts",
-    "automationExercise_only": "tsx ./src/tests/automationExerciseApi.test.ts",
+    "automationExercise_only": "tsx --test-only ./src/tests/automationExerciseApi.test.ts",
     "automationExercise": "tsx ./src/tests/automationExerciseApi.test.ts",
     "devExpress": "tsx ./src/tests/devexpress.test.ts",
     "infiniteScroll": "tsx ./src/tests/infiniteScroll.test",
-    "tlsAuth": "tsx ./src/tests/tlsClientAuthentication.test.ts"
+    "tlsAuth": "tsx ./src/tests/tlsClientAuthentication.test.ts",
+    "tlsAuth_only": "tsx --test-only ./src/tests/tlsClientAuthentication.test.ts"
   },
   "keywords": [],
   "author": "Alexandru Bajan",

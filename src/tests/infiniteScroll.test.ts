@@ -25,9 +25,9 @@ describe("infiniteScroll - Test scenario", () => {
   });
 
   it("Scenario: scroll first 10 pages and stop test", async () => {
-    // #
     let pageIndex;
 
+    // # configure event listener
     page.on("console", (message: ConsoleMessage) => {
       const consoleMessageText = message.text();
       if (consoleMessageText.includes("[pageIndex=")) {
@@ -35,7 +35,7 @@ describe("infiniteScroll - Test scenario", () => {
       }
     });
 
-    // #
+    // # load page
     await page.goto(settings.testUrls.infiniteAjaxScroll);
     const scrollToPage = 10;
 
@@ -44,6 +44,7 @@ describe("infiniteScroll - Test scenario", () => {
     let maxScrolls = 100;
     let scrollCount = 0;
 
+    // scroll until page 10
     while (scrollCount < maxScrolls) {
       await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
 
