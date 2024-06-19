@@ -19,7 +19,7 @@ cd home-made-puppeteer
 npm install
 ```
 
-# Check test settings file & run scripts:
+## Check test settings file & run scripts:
 
 ```bash
 npm run tlsAuth
