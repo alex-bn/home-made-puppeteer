@@ -2,15 +2,21 @@ import { describe, it } from "node:test";
 import HttpEngine from "../http-engine/HttpEngine";
 import settings from "./_settings.json";
 import assert from "assert";
-import puppeteer, { Browser } from "puppeteer";
+import puppeteer from "puppeteer";
 import UtilityClass from "../utils/UtilityClass";
-import fs from "node:fs";
+import fs from "fs";
 import axios from "axios";
-import https from "node:https";
+import https from "https";
 
 describe("TLS Client Authentication Test", () => {
+  const TLS_TEST_URL = settings.testUrls.tlsClientAuthentication;
+  const CERT_PATH = settings.certs.cer;
+  const KEY_PATH = settings.certs.key;
+  const PFX_PATH = settings.certs.pfx;
+  const PFX_PASS = settings.certs.passwd;
+
   it("TLSv1.2 Authentication OK", async () => {
-    const http = new HttpEngine(settings.testUrls.tlsClientAuthentication, settings.certs.pfx, settings.certs.passwd);
+    const http = new HttpEngine(TLS_TEST_URL, PFX_PATH, PFX_PASS);
     const response = await http.get("/");
 
     // test
@@ -19,7 +25,7 @@ describe("TLS Client Authentication Test", () => {
   });
 
   it("No TLS client certificate presented", async () => {
-    const http = new HttpEngine(settings.testUrls.tlsClientAuthentication);
+    const http = new HttpEngine(TLS_TEST_URL);
     const response = await http.get("/");
 
     // test
@@ -27,29 +33,25 @@ describe("TLS Client Authentication Test", () => {
     assert.ok(response.data.includes("Error: No TLS client certificate presented"), "TLS authentication failed!");
   });
 
-  // // still no api to do this test...
-  // page.on("dialog", async (dialog) => {
-  //   await page.keyboard.press("Enter");
-  //   await dialog.accept();
-  // });
-  it("Selecting certificate from browser popup", async () => {
+  it("Select certificate from browser popup - workaround", async () => {
     const pageHelper = new UtilityClass();
     const browser = await puppeteer.launch(settings.puppeteerLaunchOptions);
+    let page;
 
     try {
-      const page = await browser.newPage();
+      page = await browser.newPage();
 
-      // workaround ?
+      // set req intercept
       await page.setRequestInterception(true);
 
-      // // Client cert files
-      const cert = fs.readFileSync(settings.certs.cer);
-      const key = fs.readFileSync(settings.certs.key);
+      // client cert files
+      const cert = fs.readFileSync(CERT_PATH);
+      const key = fs.readFileSync(KEY_PATH);
 
       page.on("request", async (interceptedRequest) => {
-        if (interceptedRequest.url() === "https://server.cryptomix.com/") {
+        if (interceptedRequest.url() === TLS_TEST_URL) {
           try {
-            // Intercept Request, pull out request options, add in client cert
+            // intercept request, pull out request options, add in client cert
             const options = {
               url: interceptedRequest.url(),
               method: interceptedRequest.method(),
@@ -58,16 +60,16 @@ describe("TLS Client Authentication Test", () => {
               httpsAgent: new https.Agent({
                 cert: cert,
                 key: key,
-                rejectUnauthorized: false, // if needed
               }),
             };
 
-            // Make the request with Axios
+            // make the request with Axios
             const response = await axios(options);
 
-            assert.equal(response.data.includes("TLSv1.2 Authentication OK!"), true);
+            // Test 1
+            assert.ok(response.data.includes("TLSv1.2 Authentication OK!"), "TLSv1.2 Authentication test failed!");
 
-            // Continue the intercepted request with the Axios response data
+            // continue the intercepted request with the Axios response data
             interceptedRequest.respond({
               status: response.status,
               contentType: response.headers["content-type"],
@@ -90,22 +92,23 @@ describe("TLS Client Authentication Test", () => {
         }
       });
 
-      //
-      await page.goto(settings.testUrls.tlsClientAuthentication);
+      await page.goto(TLS_TEST_URL);
 
-      // test
+      // Test 2
       const text = await pageHelper.getTextContent(page, "body > pre");
-      assert.ok(text?.includes("[SSL_CLIENT_SERIAL] => 1F60DD0808D452BF4FD956509B970AF0"));
+      assert.ok(
+        text?.includes("[SSL_CLIENT_SERIAL] => 1F60DD0808D452BF4FD956509B970AF0"),
+        "Client serial number test failed!"
+      );
 
-      //
       // await pageHelper.sleep(3000000);
-
-      //
-      await browser.close();
     } catch (error) {
-      console.log(error);
+      console.error("Test execution error:", error);
     } finally {
-      await browser?.close();
+      if (page) {
+        await page.close();
+      }
+      await browser.close();
     }
   });
 });

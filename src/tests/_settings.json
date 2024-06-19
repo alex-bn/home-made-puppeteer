@@ -8,7 +8,7 @@
       "email": "user647712@yopmail.com",
       "password": "1234"
     },
-    "tlsClientAuthentication": "https://server.cryptomix.com"
+    "tlsClientAuthentication": "https://server.cryptomix.com/"
   },
   "certs": {
     "pfx": "C:/Users/Lisi/Desktop/UtilityClass/src/test-certs/alex.test.pfx",
