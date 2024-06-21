@@ -325,35 +325,35 @@ describe("uiTestingPlayground - Test scenarios", () => {
   it("Scenario: Shadow DOM", async () => {
     // http://www.uitestingplayground.com/shadowdom
 
-    // 1 - set clipboard permission
-    const context = browser.defaultBrowserContext();
-    await context.overridePermissions("https://www.uuidgenerator.net/guid", ["clipboard-read"]);
-
     // shadow DOM
     {
-      // #2 - access test
+      // #1 - access test
       await pageHelper.clickAndWaitForNavigation(page, 'a[href="/shadowdom"]');
 
-      // #3 - selectors
+      // #2 - selectors
       const shadowRootNodeSelector = "div > guid-generator";
       const shadowDOMGenerateBtnSelector = "#buttonGenerate";
       const shadowDOMCopyBtnSelector = "#buttonCopy";
 
-      // #4 - click generate
+      // #3 - click generate
       await pageHelper.clickFromShadowDOM(page, shadowRootNodeSelector, shadowDOMGenerateBtnSelector);
 
-      // #5 - click copy
+      // #4 - click copy
       await pageHelper.clickFromShadowDOM(page, shadowRootNodeSelector, shadowDOMCopyBtnSelector);
 
-      // #6 - test -> implicit verification that all of the above code has executed
+      // #5 - test -> implicit verification that all of the above code has executed
       assert.equal(true, true);
 
       // The test cannot proceed further using Puppeteer because the uitestingplayground domain is not secure, operating over HTTP instead of HTTPS.
       // Trying to override permission over HTTP will give: Protocol error (Browser.grantPermissions): Permissions can't be granted in current context.
     }
 
-    // Next section will demonstrate clipboard value verification using a domain that operates over HTTPS
+    // Next section will demonstrate clipboard value verification using a domain that operates over HTTPS.
     {
+      // set clipboard permission
+      const context = browser.defaultBrowserContext();
+      await context.overridePermissions("https://www.uuidgenerator.net/guid", ["clipboard-read"]);
+
       //
       await pageHelper.loadPage(page, "https://www.uuidgenerator.net/guid");
 

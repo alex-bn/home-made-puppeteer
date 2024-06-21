@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { describe, it, before } from "node:test";
-import automationExerciseApi from "./test-clients/automation-exercise/AutomationExerciseApi";
-import Helpers from "./test-clients/automation-exercise/Helpers";
+import automationExerciseApi from "../test-clients/automation-exercise/AutomationExerciseApi";
+import Helpers from "../test-clients/automation-exercise/Helpers";
 import settings from "./_settings.json";
 
 describe("automationExercise - API tests scenarios", () => {

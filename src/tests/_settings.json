@@ -6,7 +6,8 @@
     "automationExercise": {
       "url": "https://automationexercise.com/api",
       "email": "user647712@yopmail.com",
-      "password": "1234"
+      "password": "1234",
+      "webAppUrl": "http://automationexercise.com"
     },
     "tlsClientAuthentication": "https://server.cryptomix.com/"
   },
@@ -17,7 +18,7 @@
     "key": "C:/Users/Lisi/Desktop/UtilityClass/src/test-certs/decrypted-key.pem"
   },
   "puppeteerLaunchOptions": {
-    "headless": true,
+    "headless": false,
     "defaultViewport": null,
     "slowMo": 0,
     "ignoreHTTPSErrors": true,
