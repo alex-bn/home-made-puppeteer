@@ -1,17 +1,74 @@
-import { Page } from "puppeteer";
+import { Browser, Page } from "puppeteer";
 import UtilityClass from "../../utils/UtilityClass";
 import assert from "node:assert";
+import Helpers from "./Helpers";
+import UserAgent from "user-agents";
 
 const pageHelper = new UtilityClass();
+const helpers = new Helpers();
 
 export default class BrowserFunctions {
+  async makePageAndGoToLogin(browser: Browser, url: string, userAgent: UserAgent): Promise<Page> {
+    const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+    await this.goToLogin(page, url);
+    return page;
+  }
+
+  async verifyInlineColorIsOrange(page: Page, selector: string) {
+    const elementColor = await pageHelper.getInlineStylePropertyValue(page, selector, "color");
+    assert.equal(elementColor, "orange");
+  }
+
   async visitHomePage(page: Page, url: string) {
     // go to page
     await pageHelper.loadPage(page, url);
 
     // home page test
-    const elementColor = await pageHelper.getInlineStylePropertyValue(page, 'li a[href="/"]', "color");
-    assert.equal(elementColor, "orange");
+    const homePageSelector = 'li a[href="/"]';
+    await this.verifyInlineColorIsOrange(page, homePageSelector);
+  }
+
+  async goToLogin(page: Page, url: string) {
+    await this.visitHomePage(page, url);
+
+    const signUpSelector = 'li a[href="/login"]';
+    await pageHelper.waitAndClick(page, signUpSelector);
+
+    await this.verifyInlineColorIsOrange(page, signUpSelector);
+  }
+
+  async verifyLoginToYourAccountText(page: Page) {
+    const loginFormTextSelector = ".login-form > h2";
+    const text = await pageHelper.getTextContent(page, loginFormTextSelector);
+    assert.equal(text, "Login to your account");
+  }
+
+  async verifyNewUserSignupText(page: Page) {
+    const signUpText = await pageHelper.getTextContent(page, ".signup-form > h2");
+    assert.equal(signUpText, "New User Signup!");
+  }
+
+  async autoLogin(page: Page, email: string, passwd: string) {
+    const emailSelector = 'input[data-qa="login-email"]';
+    const passwdSelector = 'input[data-qa="login-password"]';
+    const loginBtn = 'button[data-qa="login-button"]';
+
+    await page.type(emailSelector, email);
+    await page.type(passwdSelector, passwd);
+
+    await Promise.all([page.waitForNavigation(), page.click(loginBtn)]);
+  }
+
+  async verifyLoggedInUser(page: Page, userEmail: string) {
+    const selector = "ul > li:nth-child(10) > a";
+    const text = await pageHelper.getTextContent(page, selector);
+    assert.equal(text, `Logged in as ${userEmail.split("@")[0]}`);
+  }
+
+  async deleteAccount(page: Page) {
+    const selector = 'a[href="/delete_account"]';
+    await pageHelper.clickAndWaitForNavigation(page, selector);
   }
 
   async selectTitle(page: Page, title: "Mr" | "Mrs") {
@@ -55,5 +112,56 @@ export default class BrowserFunctions {
     await pageHelper.typeText(page, city, "string");
     await pageHelper.typeText(page, zipCode, "string");
     await pageHelper.typeText(page, nr, "string");
+  }
+
+  async clickSignUp(page: Page) {
+    const signUpBtnSelector = 'button[data-qa="signup-button"]';
+    await pageHelper.clickAndWaitForNavigation(page, signUpBtnSelector);
+  }
+
+  async quickEnroll(page: Page): Promise<string> {
+    //
+    const signUpSelector = 'li a[href="/login"]';
+    await pageHelper.waitAndClick(page, signUpSelector);
+    //
+    const email = helpers.getEmail();
+    const nameSelector = 'input[data-qa="signup-name"]';
+    const emailSelector = 'input[data-qa="signup-email"]';
+    const name = email.split("@")[0];
+    //
+    await pageHelper.typeText(page, nameSelector, name);
+    await pageHelper.typeText(page, emailSelector, email);
+
+    //
+    await this.clickSignUp(page);
+
+    //
+    await this.selectTitle(page, "Mr");
+    await pageHelper.typeText(page, "#password", "1234");
+    await this.selectDateOfBirth(page);
+
+    //
+    await this.fillAddressInformation(page);
+
+    //
+    const selector = 'button[data-qa="create-account"]';
+    await pageHelper.clickAndWaitForNavigation(page, selector);
+
+    //
+    const selectorContinue = 'a[data-qa="continue-button"]';
+    await pageHelper.clickAndWaitForNavigation(page, selectorContinue);
+
+    //
+    const selectorLoginText = "ul > li:nth-child(10) > a";
+    const text = await pageHelper.getTextContent(page, selectorLoginText);
+    assert.equal(text, `Logged in as ${email.split("@")[0]}`);
+
+    //
+
+    const logoutSel = 'a[href="/logout"]';
+    await pageHelper.clickAndWaitForNavigation(page, logoutSel);
+
+    //
+    return email;
   }
 }

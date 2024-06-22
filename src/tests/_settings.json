@@ -5,7 +5,7 @@
     "infiniteAjaxScroll": "https://infiniteajaxscroll.com/examples/blocks/",
     "automationExercise": {
       "url": "https://automationexercise.com/api",
-      "email": "user647712@yopmail.com",
+      "email": "user614363@yopmail.com",
       "password": "1234",
       "webAppUrl": "http://automationexercise.com"
     },
@@ -18,7 +18,7 @@
     "key": "C:/Users/Lisi/Desktop/UtilityClass/src/test-certs/decrypted-key.pem"
   },
   "puppeteerLaunchOptions": {
-    "headless": false,
+    "headless": true,
     "defaultViewport": null,
     "slowMo": 0,
     "ignoreHTTPSErrors": true,

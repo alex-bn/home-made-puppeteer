@@ -1,4 +1,4 @@
-import HttpEngine from "../../../http-engine/HttpEngine";
+import HttpEngine from "../../http-engine/HttpEngine";
 import {
   ApiResponse,
   ProductsList,
@@ -8,7 +8,7 @@ import {
   CreateAccount,
   DeleteAccount,
 } from "./interfaces";
-import settings from "../../_settings.json";
+import settings from "../../tests/_settings.json";
 import { AxiosRequestConfig } from "axios";
 import FormData from "form-data";
 

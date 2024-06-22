@@ -9,6 +9,7 @@
     "automationExercise_only": "tsx --test-only ./src/tests/automationExerciseApi.test.ts",
     "automationExercise": "tsx ./src/tests/automationExerciseApi.test.ts",
     "automationExerciseWebApp": "tsx ./src/tests/automationExerciseWebApp.test.ts",
+    "automationExerciseWebApp_only": "tsx --test-only ./src/tests/automationExerciseWebApp.test.ts",
     "devExpress": "tsx ./src/tests/devExpress.test.ts",
     "infiniteScroll": "tsx ./src/tests/infiniteScroll.test",
     "tlsAuth": "tsx ./src/tests/tlsClientAuthentication.test.ts",
