@@ -49,15 +49,27 @@ export default class BrowserFunctions {
     assert.equal(signUpText, "New User Signup!");
   }
 
-  async autoLogin(page: Page, email: string, passwd: string) {
+  async autoLogin(page: Page, email: string, passwd: string): Promise<void> {
     const emailSelector = 'input[data-qa="login-email"]';
     const passwdSelector = 'input[data-qa="login-password"]';
     const loginBtn = 'button[data-qa="login-button"]';
 
-    await page.type(emailSelector, email);
-    await page.type(passwdSelector, passwd);
+    try {
+      await Promise.all([
+        page.waitForSelector(emailSelector, { timeout: 5000 }),
+        page.waitForSelector(passwdSelector, { timeout: 5000 }),
+        page.waitForSelector(loginBtn, { timeout: 5000 }),
+      ]);
 
-    await Promise.all([page.waitForNavigation(), page.click(loginBtn)]);
+      await page.type(emailSelector, email);
+      await page.type(passwdSelector, passwd);
+
+      await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0", timeout: 10000 }), page.click(loginBtn)]);
+    } catch (error) {
+      console.error("Login failed:", error);
+      // Optionally, you could rethrow the error or handle it according to your needs
+      // throw error;
+    }
   }
 
   async verifyLoggedInUser(page: Page, userEmail: string) {

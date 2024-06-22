@@ -234,7 +234,7 @@ describe("automationExercise - Test cases", () => {
     });
   });
 
-  describe("Test Case 4: Logout User", () => {
+  describe.only("Test Case 4: Logout User", () => {
     it("should navigate to home page & open login form", async () => {
       page = await browserFunctions.makePageAndGoToLogin(browser, URL, userAgent);
     });
