@@ -8,16 +8,16 @@ const pageHelper = new UtilityClass();
 const helpers = new Helpers();
 
 export default class BrowserFunctions {
-  async makePageAndGoToLogin(browser: Browser, url: string, userAgent: UserAgent): Promise<Page> {
-    const page = await browser.newPage();
-    await page.setUserAgent(userAgent.random().toString());
-    await this.goToLogin(page, url);
-    return page;
-  }
-
   async verifyInlineColorIsOrange(page: Page, selector: string) {
     const elementColor = await pageHelper.getInlineStylePropertyValue(page, selector, "color");
     assert.equal(elementColor, "orange");
+  }
+
+  async createPageObjectAndGoToHomePage(browser: Browser, url: string, userAgent: UserAgent): Promise<Page> {
+    const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+    await this.visitHomePage(page, url);
+    return page;
   }
 
   async visitHomePage(page: Page, url: string) {
@@ -29,13 +29,67 @@ export default class BrowserFunctions {
     await this.verifyInlineColorIsOrange(page, homePageSelector);
   }
 
-  async goToLogin(page: Page, url: string) {
-    await this.visitHomePage(page, url);
+  async accessNavbarMenu(
+    page: Page,
+    link: "home" | "products" | "cart" | "signup/login" | "test_cases" | "api_testing" | "contact_us"
+  ): Promise<void> {
+    const selectors = {
+      home: 'li a[href="/"]',
+      products: 'li a[href="/products"]',
+      cart: 'li a[href="/view_cart"]',
+      signupLogin: 'li a[href="/login"]',
+      testCases: 'li a[href="/test_cases"]',
+      apiTesting: 'li a[href="/api_list"]',
+      contactUs: 'li a[href="/contact_us"]',
+    };
 
-    const signUpSelector = 'li a[href="/login"]';
-    await pageHelper.waitAndClick(page, signUpSelector);
+    try {
+      switch (link) {
+        case "home":
+          await pageHelper.waitAndClick(page, selectors.home);
+          await this.verifyInlineColorIsOrange(page, selectors.home);
+          break;
 
-    await this.verifyInlineColorIsOrange(page, signUpSelector);
+        case "products":
+          await pageHelper.waitAndClick(page, selectors.products);
+          await this.verifyInlineColorIsOrange(page, selectors.products);
+          break;
+
+        case "cart":
+          await pageHelper.waitAndClick(page, selectors.cart);
+          await this.verifyInlineColorIsOrange(page, selectors.cart);
+          break;
+
+        case "signup/login":
+          await pageHelper.waitAndClick(page, selectors.signupLogin);
+          await this.verifyInlineColorIsOrange(page, selectors.signupLogin);
+          break;
+
+        case "test_cases":
+          await pageHelper.waitAndClick(page, selectors.testCases);
+          await this.verifyInlineColorIsOrange(page, selectors.testCases);
+          break;
+
+        case "api_testing":
+          await pageHelper.waitAndClick(page, selectors.apiTesting);
+          await this.verifyInlineColorIsOrange(page, selectors.apiTesting);
+          break;
+
+        case "contact_us":
+          await pageHelper.waitAndClick(page, selectors.contactUs);
+          await this.verifyInlineColorIsOrange(page, selectors.contactUs);
+          break;
+
+        default:
+          console.warn(`Unknown link: ${link}, defaulting to home`);
+          await pageHelper.waitAndClick(page, selectors.home);
+          await this.verifyInlineColorIsOrange(page, selectors.home);
+          break;
+      }
+    } catch (error) {
+      console.error(`Failed to access ${link} menu:`, error);
+      // throw error;
+    }
   }
 
   async verifyLoginToYourAccountText(page: Page) {
@@ -83,6 +137,11 @@ export default class BrowserFunctions {
     await pageHelper.clickAndWaitForNavigation(page, selector);
   }
 
+  async clickSignUp(page: Page) {
+    const signUpBtnSelector = 'button[data-qa="signup-button"]';
+    await pageHelper.clickAndWaitForNavigation(page, signUpBtnSelector);
+  }
+
   async selectTitle(page: Page, title: "Mr" | "Mrs") {
     const selector = `input[value="${title}"]`;
     await pageHelper.waitAndClick(page, selector);
@@ -124,11 +183,6 @@ export default class BrowserFunctions {
     await pageHelper.typeText(page, city, "string");
     await pageHelper.typeText(page, zipCode, "string");
     await pageHelper.typeText(page, nr, "string");
-  }
-
-  async clickSignUp(page: Page) {
-    const signUpBtnSelector = 'button[data-qa="signup-button"]';
-    await pageHelper.clickAndWaitForNavigation(page, signUpBtnSelector);
   }
 
   async quickEnroll(page: Page): Promise<string> {

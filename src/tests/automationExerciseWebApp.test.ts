@@ -37,16 +37,11 @@ describe("automationExercise - Test cases", () => {
     let email: string;
 
     it("should verify that home page is visible", async () => {
-      page = await browser.newPage();
-      await page.setUserAgent(userAgent.random().toString());
-
-      // implicit verification
-      await browserFunctions.visitHomePage(page, URL);
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      const signUpSelector = 'li a[href="/login"]';
-      await pageHelper.waitAndClick(page, signUpSelector);
+      await browserFunctions.accessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'New User Signup!' is visible", async () => {
@@ -156,12 +151,12 @@ describe("automationExercise - Test cases", () => {
   describe("Test Case 2: Login User with correct email and password", () => {
     let user: string;
     it("should create a test user", async () => {
-      page = await browserFunctions.makePageAndGoToLogin(browser, URL, userAgent);
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
       user = await browserFunctions.quickEnroll(page);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      await browserFunctions.goToLogin(page, URL);
+      await browserFunctions.accessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'Login to your account' is visible", async () => {
@@ -202,8 +197,12 @@ describe("automationExercise - Test cases", () => {
   });
 
   describe("Test Case 3: Login User with incorrect email and password", () => {
-    it("should navigate to home page & open login form", async () => {
-      page = await browserFunctions.makePageAndGoToLogin(browser, URL, userAgent);
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Signup / Login' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'Login to your account' is visible", async () => {
@@ -234,9 +233,13 @@ describe("automationExercise - Test cases", () => {
     });
   });
 
-  describe.only("Test Case 4: Logout User", () => {
-    it("should navigate to home page & open login form", async () => {
-      page = await browserFunctions.makePageAndGoToLogin(browser, URL, userAgent);
+  describe("Test Case 4: Logout User", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Signup / Login' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'Login to your account' is visible", async () => {
@@ -271,8 +274,12 @@ describe("automationExercise - Test cases", () => {
   });
 
   describe("Test Case 5: Register User with existing email", () => {
-    it("should navigate to home page & open 'Signup / Login' form", async () => {
-      page = await browserFunctions.makePageAndGoToLogin(browser, URL, userAgent);
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Signup / Login' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'New User Signup!' is visible", async () => {
@@ -304,4 +311,183 @@ describe("automationExercise - Test cases", () => {
       await page.close();
     });
   });
+
+  describe("Test Case 6: Contact Us Form", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Contact Us' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "contact_us");
+    });
+
+    it("should verify 'GET IN TOUCH' is visible", async () => {
+      const textSelector = "div.col-sm-8 > div > h2";
+      const text = await pageHelper.getTextContent(page, textSelector);
+      assert.equal(text?.toUpperCase(), "GET IN TOUCH");
+    });
+
+    it("should enter name, email, subject and message", async () => {
+      const nameSelector = 'input[data-qa="name"]';
+      const emailSelector = 'input[data-qa="email"]';
+      const subjectSelector = 'input[data-qa="subject"]';
+      const messageSelector = 'textarea[data-qa="message"]';
+
+      await pageHelper.typeText(page, nameSelector, "Crispy Baker");
+      await pageHelper.typeText(page, emailSelector, "cripsy.baker@yopmail.com");
+      await pageHelper.typeText(page, subjectSelector, "I am Crispy Baker - fear me");
+      await pageHelper.typeText(
+        page,
+        messageSelector,
+        "Just because the cat has kittens in the oven, it don’t make ‘em biscuits."
+      );
+    });
+
+    it("should upload file", async () => {
+      const uploadFileSelector = 'input[name="upload_file"]';
+      await pageHelper.loadFile(page, uploadFileSelector, "C:/Users/Lisi/Desktop/UtilityClass/tsconfig.json");
+    });
+
+    it("should click OK on page dialog - event listener before actual event", async () => {
+      page.on("dialog", async (dialog) => {
+        if (dialog.message().includes("Press OK to proceed!")) {
+          await dialog.accept();
+        } else {
+          await dialog.dismiss();
+        }
+      });
+    });
+
+    it("should click 'Submit' button", async () => {
+      const submitSelector = 'input[data-qa="submit-button"]';
+      await pageHelper.waitAndClick(page, submitSelector);
+    });
+
+    it("should verify success message 'Success! Your details have been submitted successfully.' is visible", async () => {
+      const successMessageSelector = "div.status.alert.alert-success";
+      const text = await pageHelper.getTextContent(page, successMessageSelector);
+      assert.equal(text, "Success! Your details have been submitted successfully.");
+    });
+
+    it("should click 'Home' button and verify that landed to home page successfully", async () => {
+      const homeBtnSelector = "#form-section > a";
+      await pageHelper.waitAndClick(page, homeBtnSelector);
+      //
+      const homePageOrangeSelector = 'li a[href="/"]';
+      await browserFunctions.verifyInlineColorIsOrange(page, homePageOrangeSelector);
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
+  describe("Test Case 7: Verify Test Cases Page", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Test Cases' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "test_cases");
+    });
+
+    it("should verify user is navigated to test cases page successfully", async () => {
+      const textSelector = "h5 > span";
+      const expectedMessageFromTestCasesPage =
+        "Below is the list of test Cases for you to practice the Automation. Click on the scenario for detailed Test Steps:";
+      const text = await pageHelper.getTextContent(page, textSelector);
+      assert.equal(text, expectedMessageFromTestCasesPage);
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
+  describe("Test Case 8: Verify All Products and product detail page", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Products' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "products");
+    });
+
+    it("should verify user is navigated to ALL PRODUCTS page successfully", async () => {
+      const allProductsTextSelector = ".padding-right > div > h2";
+      const text = await pageHelper.getTextContent(page, allProductsTextSelector);
+      assert.equal(text?.toUpperCase(), "ALL PRODUCTS");
+    });
+
+    it("should verify that the products list is visible", async () => {
+      const productSelector = "div.product-image-wrapper";
+      const nrProducts = 34;
+      const products = await page.$$(productSelector);
+      assert.equal(products.length, nrProducts);
+    });
+
+    it("should click on 'View Product' of first product", async () => {
+      const viewFirstProductSelector = 'a[href="/product_details/1"]';
+      await pageHelper.clickAndWaitForNavigation(page, viewFirstProductSelector);
+    });
+
+    it("should verify that user is landed to product detail page", async () => {
+      const url = page.url();
+      assert.equal(url, "https://automationexercise.com/product_details/1");
+    });
+
+    it("should verify that detail detail is visible: product name, category, price, availability, condition, brand", async () => {
+      // parent info html
+      const parentSelector = "div.product-information";
+      const parentElement = await page.$(parentSelector);
+
+      // product name
+      const childSelector1 = "h2";
+      const childElement1 = await parentElement?.$(childSelector1);
+      const textContent1 = await page.evaluate((el) => el?.textContent, childElement1);
+      assert.equal(textContent1, "Blue Top");
+
+      // availability
+      const childSelector2 = "p:nth-child(6)";
+      const childElement2 = await parentElement?.$(childSelector2);
+      const textContent2 = await page.evaluate((el) => el?.textContent, childElement2);
+      assert.equal(textContent2, "Availability: In Stock");
+
+      // condition
+      const childSelector3 = "p:nth-child(7)";
+      const childElement3 = await parentElement?.$(childSelector3);
+      const textContent3 = await page.evaluate((el) => el?.textContent, childElement3);
+      assert.equal(textContent3, "Condition: New");
+
+      // brand
+      const childSelector4 = "p:nth-child(8)";
+      const childElement4 = await parentElement?.$(childSelector4);
+      const textContent4 = await page.evaluate((el) => el?.textContent, childElement4);
+      assert.equal(textContent4, "Brand: Polo");
+
+      // category
+      const childSelector5 = "p:nth-child(3)";
+      const childElement5 = await parentElement?.$(childSelector5);
+      const textContent5 = await page.evaluate((el) => el?.textContent, childElement5);
+      assert.equal(textContent5, "Category: Women > Tops");
+
+      // price
+      const childSelector6 = "span > span";
+      const childElement6 = await parentElement?.$(childSelector6);
+      const textContent6 = await page.evaluate((el) => el?.textContent, childElement6);
+      assert.equal(textContent6, "Rs. 500");
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+  describe("", () => {});
+  describe("", () => {});
+  describe("", () => {});
+  describe("", () => {});
+  describe("", () => {});
+  describe("", () => {});
+  describe("", () => {});
+  describe("", () => {});
 });

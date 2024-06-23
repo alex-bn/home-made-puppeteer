@@ -1,5 +1,7 @@
 import { ElementHandle, GoToOptions, Page } from "puppeteer";
 import readline from "node:readline";
+import fs from "fs";
+import path from "path";
 
 // extend the global Window interface to include clickEvents
 declare global {
@@ -431,5 +433,34 @@ export default class UtilityClass {
   // ?
   async countElements(page: Page, selector: string): Promise<number> {
     return await page.$$eval(selector, (items) => items.length);
+  }
+
+  // ?
+  async loadFile(page: Page, selector: string, filePath: string): Promise<void> {
+    try {
+      // 1 - file exists ?
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
+      // 2 - button available ?
+      await page.waitForSelector(selector, { timeout: 5000 });
+
+      // 3 - absolute path
+      const absoluteFilePath = path.resolve(filePath);
+
+      // file input of correct type ?
+      const inputElement: ElementHandle<HTMLInputElement> | null = (await page.$(
+        selector
+      )) as ElementHandle<HTMLInputElement>;
+      if (inputElement) {
+        await inputElement.uploadFile(absoluteFilePath);
+      } else {
+        throw new Error(`Unable to find file input element: ${selector}`);
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 }

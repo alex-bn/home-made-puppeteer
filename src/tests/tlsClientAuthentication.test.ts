@@ -8,12 +8,12 @@ import fs from "fs";
 import axios from "axios";
 import https from "https";
 
-describe("TLS Client Authentication Test", () => {
-  const TLS_TEST_URL = settings.testUrls.tlsClientAuthentication;
-  const PFX_PATH = settings.certs.pfx;
-  const PFX_PASS = settings.certs.passwd;
+const TLS_TEST_URL = settings.testUrls.tlsClientAuthentication;
+const PFX_PATH = settings.certs.pfx;
+const PFX_PASS = settings.certs.passwd;
 
-  it("TLSv1.2 Authentication OK", async () => {
+describe("TLS Client Authentication Test", () => {
+  it("TLS authentication OK", async () => {
     const http = new HttpEngine(TLS_TEST_URL, PFX_PATH, PFX_PASS);
     const response = await http.get("/");
 
@@ -31,7 +31,7 @@ describe("TLS Client Authentication Test", () => {
     assert.ok(response.data.includes("Error: No TLS client certificate presented"), "TLS authentication failed!");
   });
 
-  it("Select certificate from browser popup - workaround", async () => {
+  it("Select certificate from browser popup - workaround/dirty-fix", async () => {
     const pageHelper = new UtilityClass();
     const browser = await puppeteer.launch(settings.puppeteerLaunchOptions);
     let page;
@@ -63,7 +63,7 @@ describe("TLS Client Authentication Test", () => {
             // make the request with Axios
             const response = await axios(options);
 
-            // Test 1
+            // test 1
             assert.ok(response.data.includes("TLSv1.2 Authentication OK!"), "TLSv1.2 Authentication test failed!");
 
             // continue the intercepted request with the Axios response data
@@ -91,7 +91,7 @@ describe("TLS Client Authentication Test", () => {
 
       await page.goto(TLS_TEST_URL);
 
-      // Test 2
+      // test 2
       const text = await pageHelper.getTextContent(page, "body > pre");
       assert.ok(
         text?.includes("[SSL_CLIENT_SERIAL] => 1F60DD0808D452BF4FD956509B970AF0"),
