@@ -43,52 +43,47 @@ export default class BrowserFunctions {
       contactUs: 'li a[href="/contact_us"]',
     };
 
-    try {
-      switch (link) {
-        case "home":
-          await pageHelper.waitAndClick(page, selectors.home);
-          await this.verifyInlineColorIsOrange(page, selectors.home);
-          break;
+    switch (link) {
+      case "home":
+        await pageHelper.waitAndClick(page, selectors.home);
+        await this.verifyInlineColorIsOrange(page, selectors.home);
+        break;
 
-        case "products":
-          await pageHelper.waitAndClick(page, selectors.products);
-          await this.verifyInlineColorIsOrange(page, selectors.products);
-          break;
+      case "products":
+        await pageHelper.waitAndClick(page, selectors.products);
+        await this.verifyInlineColorIsOrange(page, selectors.products);
+        break;
 
-        case "cart":
-          await pageHelper.waitAndClick(page, selectors.cart);
-          await this.verifyInlineColorIsOrange(page, selectors.cart);
-          break;
+      case "cart":
+        await pageHelper.waitAndClick(page, selectors.cart);
+        await this.verifyInlineColorIsOrange(page, selectors.cart);
+        break;
 
-        case "signup/login":
-          await pageHelper.waitAndClick(page, selectors.signupLogin);
-          await this.verifyInlineColorIsOrange(page, selectors.signupLogin);
-          break;
+      case "signup/login":
+        await pageHelper.waitAndClick(page, selectors.signupLogin);
+        await this.verifyInlineColorIsOrange(page, selectors.signupLogin);
+        break;
 
-        case "test_cases":
-          await pageHelper.waitAndClick(page, selectors.testCases);
-          await this.verifyInlineColorIsOrange(page, selectors.testCases);
-          break;
+      case "test_cases":
+        await pageHelper.waitAndClick(page, selectors.testCases);
+        await this.verifyInlineColorIsOrange(page, selectors.testCases);
+        break;
 
-        case "api_testing":
-          await pageHelper.waitAndClick(page, selectors.apiTesting);
-          await this.verifyInlineColorIsOrange(page, selectors.apiTesting);
-          break;
+      case "api_testing":
+        await pageHelper.waitAndClick(page, selectors.apiTesting);
+        await this.verifyInlineColorIsOrange(page, selectors.apiTesting);
+        break;
 
-        case "contact_us":
-          await pageHelper.waitAndClick(page, selectors.contactUs);
-          await this.verifyInlineColorIsOrange(page, selectors.contactUs);
-          break;
+      case "contact_us":
+        await pageHelper.waitAndClick(page, selectors.contactUs);
+        await this.verifyInlineColorIsOrange(page, selectors.contactUs);
+        break;
 
-        default:
-          console.warn(`Unknown link: ${link}, defaulting to home`);
-          await pageHelper.waitAndClick(page, selectors.home);
-          await this.verifyInlineColorIsOrange(page, selectors.home);
-          break;
-      }
-    } catch (error) {
-      console.error(`Failed to access ${link} menu:`, error);
-      // throw error;
+      default:
+        console.warn(`Unknown link: ${link}, defaulting to home`);
+        await pageHelper.waitAndClick(page, selectors.home);
+        await this.verifyInlineColorIsOrange(page, selectors.home);
+        break;
     }
   }
 
@@ -108,22 +103,16 @@ export default class BrowserFunctions {
     const passwdSelector = 'input[data-qa="login-password"]';
     const loginBtn = 'button[data-qa="login-button"]';
 
-    try {
-      await Promise.all([
-        page.waitForSelector(emailSelector, { timeout: 5000 }),
-        page.waitForSelector(passwdSelector, { timeout: 5000 }),
-        page.waitForSelector(loginBtn, { timeout: 5000 }),
-      ]);
+    await Promise.all([
+      page.waitForSelector(emailSelector, { timeout: 5000 }),
+      page.waitForSelector(passwdSelector, { timeout: 5000 }),
+      page.waitForSelector(loginBtn, { timeout: 5000 }),
+    ]);
 
-      await page.type(emailSelector, email);
-      await page.type(passwdSelector, passwd);
+    await page.type(emailSelector, email);
+    await page.type(passwdSelector, passwd);
 
-      await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0", timeout: 10000 }), page.click(loginBtn)]);
-    } catch (error) {
-      console.error("Login failed:", error);
-      // Optionally, you could rethrow the error or handle it according to your needs
-      // throw error;
-    }
+    await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0", timeout: 10000 }), page.click(loginBtn)]);
   }
 
   async verifyLoggedInUser(page: Page, userEmail: string) {

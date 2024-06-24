@@ -180,7 +180,7 @@ describe("devExpress - Simple form", () => {
   it("Scenario: should submit form", async () => {
     // submit
     const submitBtnSelector = "#submit-button";
-    await pageHelper.waitAndNavigate(page, submitBtnSelector);
+    await pageHelper.clickAndWaitForNavigation(page, submitBtnSelector);
 
     // test landing page
     const defaultDevName = "Peter Parker";

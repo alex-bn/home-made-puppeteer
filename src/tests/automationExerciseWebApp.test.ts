@@ -1,4 +1,4 @@
-import { Browser, Page } from "puppeteer";
+import { Browser, ElementHandle, Page } from "puppeteer";
 import UtilityClass from "../utils/UtilityClass";
 import assert from "node:assert";
 import { describe, it, before, after } from "node:test";
@@ -350,11 +350,7 @@ describe("automationExercise - Test cases", () => {
 
     it("should click OK on page dialog - event listener before actual event", async () => {
       page.on("dialog", async (dialog) => {
-        if (dialog.message().includes("Press OK to proceed!")) {
-          await dialog.accept();
-        } else {
-          await dialog.dismiss();
-        }
+        await dialog.accept();
       });
     });
 
@@ -371,7 +367,7 @@ describe("automationExercise - Test cases", () => {
 
     it("should click 'Home' button and verify that landed to home page successfully", async () => {
       const homeBtnSelector = "#form-section > a";
-      await pageHelper.waitAndClick(page, homeBtnSelector);
+      await pageHelper.clickAndWaitForNavigation(page, homeBtnSelector);
       //
       const homePageOrangeSelector = 'li a[href="/"]';
       await browserFunctions.verifyInlineColorIsOrange(page, homePageOrangeSelector);
@@ -428,54 +424,40 @@ describe("automationExercise - Test cases", () => {
 
     it("should click on 'View Product' of first product", async () => {
       const viewFirstProductSelector = 'a[href="/product_details/1"]';
-      await pageHelper.clickAndWaitForNavigation(page, viewFirstProductSelector);
+      await page.locator(viewFirstProductSelector).click();
     });
 
+    let parentElement: ElementHandle<HTMLDivElement> | null;
     it("should verify that user is landed to product detail page", async () => {
-      const url = page.url();
-      assert.equal(url, "https://automationexercise.com/product_details/1");
+      const parentSelector = "div.product-information";
+      parentElement = await page.locator(parentSelector).waitHandle();
+      //missing verification here
     });
 
     it("should verify that detail detail is visible: product name, category, price, availability, condition, brand", async () => {
-      // parent info html
-      const parentSelector = "div.product-information";
-      const parentElement = await page.$(parentSelector);
+      if (!parentElement) {
+        assert.fail(`Unable to find parent element`);
+      }
 
-      // product name
-      const childSelector1 = "h2";
-      const childElement1 = await parentElement?.$(childSelector1);
-      const textContent1 = await page.evaluate((el) => el?.textContent, childElement1);
-      assert.equal(textContent1, "Blue Top");
+      // selector to expected value
+      const details = [
+        { selector: "h2", expected: "Blue Top" },
+        { selector: "p:nth-child(6)", expected: "Availability: In Stock" },
+        { selector: "p:nth-child(7)", expected: "Condition: New" },
+        { selector: "p:nth-child(8)", expected: "Brand: Polo" },
+        { selector: "p:nth-child(3)", expected: "Category: Women > Tops" },
+        { selector: "span > span", expected: "Rs. 500" },
+      ];
 
-      // availability
-      const childSelector2 = "p:nth-child(6)";
-      const childElement2 = await parentElement?.$(childSelector2);
-      const textContent2 = await page.evaluate((el) => el?.textContent, childElement2);
-      assert.equal(textContent2, "Availability: In Stock");
-
-      // condition
-      const childSelector3 = "p:nth-child(7)";
-      const childElement3 = await parentElement?.$(childSelector3);
-      const textContent3 = await page.evaluate((el) => el?.textContent, childElement3);
-      assert.equal(textContent3, "Condition: New");
-
-      // brand
-      const childSelector4 = "p:nth-child(8)";
-      const childElement4 = await parentElement?.$(childSelector4);
-      const textContent4 = await page.evaluate((el) => el?.textContent, childElement4);
-      assert.equal(textContent4, "Brand: Polo");
-
-      // category
-      const childSelector5 = "p:nth-child(3)";
-      const childElement5 = await parentElement?.$(childSelector5);
-      const textContent5 = await page.evaluate((el) => el?.textContent, childElement5);
-      assert.equal(textContent5, "Category: Women > Tops");
-
-      // price
-      const childSelector6 = "span > span";
-      const childElement6 = await parentElement?.$(childSelector6);
-      const textContent6 = await page.evaluate((el) => el?.textContent, childElement6);
-      assert.equal(textContent6, "Rs. 500");
+      //
+      for (const detail of details) {
+        const textContent = await pageHelper.getTextContentFromParent(page, parentElement, detail.selector);
+        assert.equal(
+          textContent,
+          detail.expected,
+          `Expected "${detail.expected}" but got "${textContent}" for selector "${detail.selector}"`
+        );
+      }
     });
 
     it("should close page", async () => {

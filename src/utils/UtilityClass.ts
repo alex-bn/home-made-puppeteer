@@ -81,64 +81,57 @@ export default class UtilityClass {
    * @returns {Promise<boolean>} - Returns true if the element is visible and not obstructed, false otherwise.
    */
   async elementIsVisible(page: Page, selector: string): Promise<boolean> {
-    try {
-      const element = await page.$(selector);
-      if (element) {
-        const isElementVisible = await page.evaluate((uiElement) => {
-          const style = getComputedStyle(uiElement);
-          const rect = uiElement.getBoundingClientRect();
-          const isHidden =
-            style.visibility === "hidden" || style.display === "none" || style.opacity === "0" || rect.width === 0;
-          const isOffscreen =
-            rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth;
+    const element = await page.$(selector);
+    if (element) {
+      const isElementVisible = await page.evaluate((uiElement) => {
+        const style = getComputedStyle(uiElement);
+        const rect = uiElement.getBoundingClientRect();
+        const isHidden =
+          style.visibility === "hidden" || style.display === "none" || style.opacity === "0" || rect.width === 0;
+        const isOffscreen =
+          rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth;
 
-          if (isHidden || isOffscreen) {
-            return false;
-          }
+        if (isHidden || isOffscreen) {
+          return false;
+        }
 
-          // Calculate Center Point:
-          const { top, left, bottom, right } = rect;
-          const x = (left + right) / 2;
-          const y = (top + bottom) / 2;
+        // Calculate Center Point:
+        const { top, left, bottom, right } = rect;
+        const x = (left + right) / 2;
+        const y = (top + bottom) / 2;
 
-          // Check Element at Center Point:
-          const elementAtPoint = document.elementFromPoint(x, y);
+        // Check Element at Center Point:
+        const elementAtPoint = document.elementFromPoint(x, y);
 
-          // Verify Element Containment and Overlapping:
-          const isOverlapped = Array.from(document.elementsFromPoint(x, y)).some((el) => {
-            const elStyle = getComputedStyle(el);
-            return (
-              (el !== uiElement && elStyle.position === "absolute") ||
-              elStyle.position === "fixed" ||
-              elStyle.zIndex > style.zIndex
-            );
-          });
+        // Verify Element Containment and Overlapping:
+        const isOverlapped = Array.from(document.elementsFromPoint(x, y)).some((el) => {
+          const elStyle = getComputedStyle(el);
+          return (
+            (el !== uiElement && elStyle.position === "absolute") ||
+            elStyle.position === "fixed" ||
+            elStyle.zIndex > style.zIndex
+          );
+        });
 
-          return uiElement.contains(elementAtPoint) && !isOverlapped;
-        }, element);
+        return uiElement.contains(elementAtPoint) && !isOverlapped;
+      }, element);
 
-        return isElementVisible;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error(error);
+      return isElementVisible;
+    } else {
       return false;
     }
   }
 
   // click & wait for network idle
   async clickAndWaitForNetworkIdle(page: Page, selector: string) {
-    try {
-      const selectorHandle = await page.waitForSelector(selector);
-      if (selectorHandle) {
-        const idlePromise = page.waitForNetworkIdle({ idleTime: 1000 });
-        await selectorHandle.click();
-        await idlePromise;
-      }
-    } catch (error) {
-      console.error(error);
+    const selectorHandle = await page.waitForSelector(selector);
+    if (selectorHandle) {
+      const idlePromise = page.waitForNetworkIdle({ idleTime: 1000 });
+      await selectorHandle.click();
+      await idlePromise;
     }
+
+    selectorHandle?.dispose();
   }
 
   // get element by xpath
@@ -155,19 +148,21 @@ export default class UtilityClass {
 
   // cheeky wait & click
   async waitAndClick(page: Page, selector: string): Promise<void> {
-    try {
-      await Promise.all([page.waitForSelector(selector), page.click(selector)]);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  // click & navigate
-  async waitAndNavigate(page: Page, selector: string): Promise<void> {
-    try {
-      await Promise.all([page.waitForNavigation(), page.click(selector)]);
-    } catch (error) {
-      console.error(error);
+    // let el: ElementHandle<Element> | null = null;
+    // try {
+    //   el = await page.waitForSelector(selector, { timeout: 5000 });
+    //   if (el) {
+    //     await el.click();
+    //   }
+    // } catch (error) {
+    //   throw Error("No element to click!");
+    // }
+    const el = await page.locator(selector).waitHandle();
+    if (el) {
+      await page.click(selector);
+      await el.dispose();
+    } else {
+      throw Error("No element to click!");
     }
   }
 
@@ -221,27 +216,20 @@ export default class UtilityClass {
    * @param {string} selector - The selector of the element to check.
    */
   async getTextContent(page: Page, selector: string) {
-    try {
-      const elementHandle = await page.$(selector);
-      return (await elementHandle?.evaluate((el) => el.textContent))?.trim();
-    } catch (error) {
-      console.error(error);
-    }
+    const elementHandle = await page.waitForSelector(selector, { timeout: 5000 });
+    return (await elementHandle?.evaluate((el) => el.textContent))?.trim();
   }
 
   // waiting
   async clickAndWaitForNavigation(page: Page, selector: string) {
-    try {
-      const selectorHandle = await page.waitForSelector(selector);
-      if (selectorHandle) {
-        const navPromise = page.waitForNavigation({
-          waitUntil: "networkidle2",
-        });
-        await selectorHandle.click();
-        await navPromise;
-      }
-    } catch (error) {
-      console.error(error);
+    const selectorHandle = await page.waitForSelector(selector);
+    if (selectorHandle) {
+      await page.hover(selector);
+      const navPromise = page.waitForNavigation({
+        // waitUntil: "networkidle2",
+      });
+      await selectorHandle.click();
+      await navPromise;
     }
   }
 
@@ -281,11 +269,7 @@ export default class UtilityClass {
 
   // load url
   async loadPage(page: Page, url: string, options?: GoToOptions | undefined): Promise<void> {
-    try {
-      await Promise.all([page.goto(url, options), page.waitForResponse((response) => response.ok())]);
-    } catch (error) {
-      console.error(error);
-    }
+    await Promise.all([page.goto(url, options), page.waitForResponse((response) => response.ok())]);
   }
 
   // click event listener
@@ -344,20 +328,15 @@ export default class UtilityClass {
    * @param property - The CSS property whose value needs to be retrieved.
    * @returns The value of the specified CSS property, or null if not found.
    */
-  async getInlineStylePropertyValue(page: Page, selector: string, property: string): Promise<string | null> {
-    try {
-      return await page.$eval(
-        selector,
-        (el, prop) => {
-          const element = el as HTMLElement;
-          return element.style.getPropertyValue(prop);
-        },
-        property
-      );
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
+  async getInlineStylePropertyValue(page: Page, selector: string, property: string): Promise<string> {
+    return await page.$eval(
+      selector,
+      (el, prop) => {
+        const element = el as HTMLElement;
+        return element.style.getPropertyValue(prop);
+      },
+      property
+    );
   }
 
   // computed css
@@ -422,12 +401,7 @@ export default class UtilityClass {
    * @returns The value of the specified attribute, or null if not found.
    */
   async getAttributeValue(page: Page, selector: string, attribute: string): Promise<string | null> {
-    try {
-      return await page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
+    return await page.$eval(selector, (el, attr) => el.getAttribute(attr), attribute);
   }
 
   // ?
@@ -437,30 +411,36 @@ export default class UtilityClass {
 
   // ?
   async loadFile(page: Page, selector: string, filePath: string): Promise<void> {
-    try {
-      // 1 - file exists ?
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${filePath}`);
-      }
-
-      // 2 - button available ?
-      await page.waitForSelector(selector, { timeout: 5000 });
-
-      // 3 - absolute path
-      const absoluteFilePath = path.resolve(filePath);
-
-      // file input of correct type ?
-      const inputElement: ElementHandle<HTMLInputElement> | null = (await page.$(
-        selector
-      )) as ElementHandle<HTMLInputElement>;
-      if (inputElement) {
-        await inputElement.uploadFile(absoluteFilePath);
-      } else {
-        throw new Error(`Unable to find file input element: ${selector}`);
-      }
-    } catch (error) {
-      console.error(error);
-      throw error;
+    // 1 - file exists ?
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
     }
+
+    // 2 - button available ?
+    await page.waitForSelector(selector, { timeout: 5000 });
+
+    // 3 - absolute path
+    const absoluteFilePath = path.resolve(filePath);
+
+    // file input of correct type ?
+    const inputElement: ElementHandle<HTMLInputElement> | null = (await page.$(
+      selector
+    )) as ElementHandle<HTMLInputElement>;
+    if (inputElement) {
+      await inputElement.uploadFile(absoluteFilePath);
+    } else {
+      throw new Error(`Unable to find file input element: ${selector}`);
+    }
+  }
+
+  //  ??
+  async getTextContentFromParent(
+    page: Page,
+    parentElement: ElementHandle<Element>,
+    childSelector: string
+  ): Promise<string | null> {
+    const childElement = await parentElement.$(childSelector);
+    if (!childElement) return null;
+    return page.evaluate((el) => el?.textContent ?? null, childElement);
   }
 }
