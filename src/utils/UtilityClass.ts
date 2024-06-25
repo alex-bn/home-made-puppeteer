@@ -146,24 +146,24 @@ export default class UtilityClass {
     return element;
   }
 
-  // cheeky wait & click
+  // wait & click
   async waitAndClick(page: Page, selector: string): Promise<void> {
-    // let el: ElementHandle<Element> | null = null;
-    // try {
-    //   el = await page.waitForSelector(selector, { timeout: 5000 });
-    //   if (el) {
-    //     await el.click();
-    //   }
-    // } catch (error) {
-    //   throw Error("No element to click!");
-    // }
-    const el = await page.locator(selector).waitHandle();
-    if (el) {
-      await page.click(selector);
-      await el.dispose();
-    } else {
+    let el: ElementHandle<Element> | null = null;
+    try {
+      el = await page.waitForSelector(selector, { timeout: 5000 });
+      if (el) {
+        await page.click(selector);
+      }
+    } catch (error) {
       throw Error("No element to click!");
     }
+    // const el = await page.locator(selector).waitHandle();
+    // if (el) {
+    //   await el.click();
+    //   await el.dispose();
+    // } else {
+    //   throw Error("No element to click!");
+    // }
   }
 
   // useful when dealing with OTP
@@ -204,6 +204,7 @@ export default class UtilityClass {
         });
       } catch (_) {
         await this.sleep(1000);
+        console.log("waited 1000");
         timeout -= 1000;
       }
     }
@@ -217,7 +218,9 @@ export default class UtilityClass {
    */
   async getTextContent(page: Page, selector: string) {
     const elementHandle = await page.waitForSelector(selector, { timeout: 5000 });
-    return (await elementHandle?.evaluate((el) => el.textContent))?.trim();
+    if (elementHandle) {
+      return (await elementHandle.evaluate((el) => el.textContent))?.trim();
+    }
   }
 
   // waiting
@@ -409,7 +412,7 @@ export default class UtilityClass {
     return await page.$$eval(selector, (items) => items.length);
   }
 
-  // ?
+  // ? - no bueno
   async loadFile(page: Page, selector: string, filePath: string): Promise<void> {
     // 1 - file exists ?
     if (!fs.existsSync(filePath)) {
@@ -442,5 +445,22 @@ export default class UtilityClass {
     const childElement = await parentElement.$(childSelector);
     if (!childElement) return null;
     return page.evaluate((el) => el?.textContent ?? null, childElement);
+  }
+
+  //
+  async clickUntilSelectorAppears(page: Page, buttonSelector: string, targetSelector: string, timeout: number) {
+    while (timeout > 0) {
+      try {
+        return await page.waitForSelector(targetSelector, {
+          visible: true,
+          timeout: 1000,
+        });
+      } catch (_) {
+        await this.sleep(1000);
+        await page.click(buttonSelector);
+        timeout -= 1000;
+      }
+    }
+    return null;
   }
 }

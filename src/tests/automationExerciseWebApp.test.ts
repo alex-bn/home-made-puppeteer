@@ -317,6 +317,15 @@ describe("automationExercise - Test cases", () => {
       page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
     });
 
+    it("should click OK on page dialog - event listener before actual event", async () => {
+      // this dialog is problematic..
+      page.on("dialog", async (dialog) => {
+        if (dialog.message().includes("Press OK to proceed!")) {
+          await dialog.accept();
+        }
+      });
+    });
+
     it("should click on 'Contact Us' button", async () => {
       await browserFunctions.accessNavbarMenu(page, "contact_us");
     });
@@ -345,18 +354,14 @@ describe("automationExercise - Test cases", () => {
 
     it("should upload file", async () => {
       const uploadFileSelector = 'input[name="upload_file"]';
-      await pageHelper.loadFile(page, uploadFileSelector, "C:/Users/Lisi/Desktop/UtilityClass/tsconfig.json");
-    });
-
-    it("should click OK on page dialog - event listener before actual event", async () => {
-      page.on("dialog", async (dialog) => {
-        await dialog.accept();
-      });
+      const [fileInput] = await Promise.all([page.waitForFileChooser(), page.click(uploadFileSelector)]);
+      await fileInput.accept(["./_settings.json"]);
     });
 
     it("should click 'Submit' button", async () => {
-      const submitSelector = 'input[data-qa="submit-button"]';
-      await pageHelper.waitAndClick(page, submitSelector);
+      const buttonSelector = 'input[data-qa="submit-button"]';
+      const targetSelector = "div.status.alert.alert-success";
+      await pageHelper.clickUntilSelectorAppears(page, buttonSelector, targetSelector, 30000);
     });
 
     it("should verify success message 'Success! Your details have been submitted successfully.' is visible", async () => {
