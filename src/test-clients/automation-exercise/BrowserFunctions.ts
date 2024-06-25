@@ -93,6 +93,12 @@ export default class BrowserFunctions {
     assert.equal(text, "Login to your account");
   }
 
+  async verifyAllProductsPage(page: Page) {
+    const allProductsTextSelector = ".padding-right > div > h2";
+    const text = await pageHelper.getTextContent(page, allProductsTextSelector);
+    assert.equal(text?.toUpperCase(), "ALL PRODUCTS");
+  }
+
   async verifyNewUserSignupText(page: Page) {
     const signUpText = await pageHelper.getTextContent(page, ".signup-form > h2");
     assert.equal(signUpText, "New User Signup!");

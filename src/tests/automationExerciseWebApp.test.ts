@@ -1,6 +1,6 @@
 import { Browser, ElementHandle, Page } from "puppeteer";
 import UtilityClass from "../utils/UtilityClass";
-import assert from "node:assert";
+import assert, { equal } from "node:assert";
 import { describe, it, before, after } from "node:test";
 import UserAgent from "user-agents";
 import settings from "./_settings.json";
@@ -318,7 +318,6 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should click OK on page dialog - event listener before actual event", async () => {
-      // this dialog is problematic..
       page.on("dialog", async (dialog) => {
         if (dialog.message().includes("Press OK to proceed!")) {
           await dialog.accept();
@@ -348,7 +347,7 @@ describe("automationExercise - Test cases", () => {
       await pageHelper.typeText(
         page,
         messageSelector,
-        "Just because the cat has kittens in the oven, it don’t make ‘em biscuits."
+        "Just because the cat has kittens in the oven, it don't make 'em biscuits."
       );
     });
 
@@ -415,9 +414,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify user is navigated to ALL PRODUCTS page successfully", async () => {
-      const allProductsTextSelector = ".padding-right > div > h2";
-      const text = await pageHelper.getTextContent(page, allProductsTextSelector);
-      assert.equal(text?.toUpperCase(), "ALL PRODUCTS");
+      await browserFunctions.verifyAllProductsPage(page);
     });
 
     it("should verify that the products list is visible", async () => {
@@ -469,9 +466,101 @@ describe("automationExercise - Test cases", () => {
       await page.close();
     });
   });
-  describe("", () => {});
-  describe("", () => {});
-  describe("", () => {});
+
+  describe("Test Case 9: Search Product", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click on 'Products' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "products");
+    });
+
+    it("should verify user is navigated to ALL PRODUCTS page successfully", async () => {
+      await browserFunctions.verifyAllProductsPage(page);
+    });
+
+    const searchedValue = "blue";
+
+    it("should enter product name in search input and click search button", async () => {
+      const searchInputSelector = "#search_product";
+      const searchHandle = await pageHelper.waitForElement(page, searchInputSelector, 10000);
+
+      if (searchHandle) {
+        await searchHandle.type(searchedValue);
+        await page.click("#submit_search");
+      } else {
+        assert.fail("Search field not found!");
+      }
+    });
+
+    it("should verify 'SEARCHED PRODUCTS' is visible", async () => {
+      const textSel = ".padding-right > div > h2";
+      const text = await pageHelper.getTextContent(page, textSel);
+
+      assert.equal(text?.toUpperCase(), "SEARCHED PRODUCTS");
+    });
+
+    it("should verify all the products related to search are visible", async () => {
+      const el = ".features_items div.col-sm-4";
+      const searchResults = await page.$$(el);
+
+      for (const el of searchResults) {
+        const textContent = await pageHelper.getTextContentFromParent(page, el, "p");
+        assert.equal(textContent?.toLowerCase().includes(searchedValue), true);
+        // console.log(textContent);
+      }
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
+  describe("Test Case 10: Verify Subscription in home page", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should scroll down to footer", async () => {
+      await pageHelper.scrollElementIntoView(page, "#footer");
+    });
+
+    it("should verify text 'SUBSCRIPTION'", async () => {
+      const sel = ".single-widget h2";
+      const text = await pageHelper.getTextContent(page, sel);
+      assert.equal(text?.toUpperCase(), "SUBSCRIPTION");
+    });
+
+    it("should enter email address in input and click arrow button", async () => {
+      // success subtribe message not visible
+      const sel = "#success-subscribe > div";
+      const isVisible = await pageHelper.elementIsVisible(page, sel);
+      assert.equal(isVisible, false);
+
+      // click
+      await page.type("#susbscribe_email", settings.testUrls.automationExercise.email);
+      await page.click("#subscribe");
+    });
+
+    it("should verify success message 'You have been successfully subscribed!' is visible", async () => {
+      const sel = "#success-subscribe > div";
+      const text = await pageHelper.getTextContent(page, sel);
+      const isVisible = await pageHelper.elementIsVisible(page, sel); // should be visible
+      if (text && isVisible) {
+        assert.equal(text, "You have been successfully subscribed!");
+        assert.equal(isVisible, true);
+      } else {
+        assert.fail("Test failed!");
+      }
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
+  describe("Test Case 11: Verify Subscription in Cart page", () => {});
   describe("", () => {});
   describe("", () => {});
   describe("", () => {});
