@@ -150,7 +150,7 @@ export default class UtilityClass {
   async waitAndClick(page: Page, selector: string): Promise<void> {
     let el: ElementHandle<Element> | null = null;
     try {
-      el = await page.waitForSelector(selector, { timeout: 5000 });
+      el = await page.waitForSelector(selector, { timeout: 10000 });
       if (el) {
         await page.click(selector);
       }
@@ -447,7 +447,7 @@ export default class UtilityClass {
     return page.evaluate((el) => el?.textContent ?? null, childElement);
   }
 
-  //
+  // so far so good
   async clickUntilSelectorAppears(page: Page, buttonSelector: string, targetSelector: string, timeout: number) {
     while (timeout > 0) {
       try {
@@ -462,5 +462,19 @@ export default class UtilityClass {
       }
     }
     return null;
+  }
+
+  async clearInputField(page: Page, selector: string) {
+    const handle = await page.waitForSelector(selector, { timeout: 5000 });
+
+    if (!handle) {
+      throw new Error(`Element with selector ${selector} not found`);
+    }
+
+    await handle.evaluate((el) => {
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+        el.value = "";
+      }
+    });
   }
 }

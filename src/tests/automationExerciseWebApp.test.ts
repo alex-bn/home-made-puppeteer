@@ -527,31 +527,109 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify text 'SUBSCRIPTION'", async () => {
-      const sel = ".single-widget h2";
-      const text = await pageHelper.getTextContent(page, sel);
-      assert.equal(text?.toUpperCase(), "SUBSCRIPTION");
+      await browserFunctions.verifySubscriptionText(page);
     });
 
     it("should enter email address in input and click arrow button", async () => {
-      // success subtribe message not visible
+      // success subscribe message not visible
       const sel = "#success-subscribe > div";
       const isVisible = await pageHelper.elementIsVisible(page, sel);
       assert.equal(isVisible, false);
 
-      // click
-      await page.type("#susbscribe_email", settings.testUrls.automationExercise.email);
-      await page.click("#subscribe");
+      await browserFunctions.subscribeEmail(page, settings.testUrls.automationExercise.email);
     });
 
     it("should verify success message 'You have been successfully subscribed!' is visible", async () => {
-      const sel = "#success-subscribe > div";
-      const text = await pageHelper.getTextContent(page, sel);
-      const isVisible = await pageHelper.elementIsVisible(page, sel); // should be visible
-      if (text && isVisible) {
-        assert.equal(text, "You have been successfully subscribed!");
-        assert.equal(isVisible, true);
-      } else {
-        assert.fail("Test failed!");
+      await browserFunctions.verifySubscriptionMessage(page);
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
+  describe("Test Case 11: Verify Subscription in Cart page", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click 'Cart' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "cart");
+    });
+
+    it("should scroll down to footer", async () => {
+      await pageHelper.scrollElementIntoView(page, "#footer");
+    });
+
+    it("should verify text 'SUBSCRIPTION'", async () => {
+      await browserFunctions.verifySubscriptionText(page);
+    });
+
+    it("should enter email address in input and click arrow button", async () => {
+      await browserFunctions.subscribeEmail(page, settings.testUrls.automationExercise.email);
+    });
+
+    it("should verify success message 'You have been successfully subscribed!' is visible", async () => {
+      await browserFunctions.verifySubscriptionMessage(page);
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
+  describe("Test Case 12: Add Products in Cart", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click 'Products' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "products");
+    });
+
+    it("should hover over first product and click 'Add to cart'", async () => {
+      await browserFunctions.addProductToCart(page, 2);
+    });
+
+    it("should click 'Continue Shopping' button", async () => {
+      await browserFunctions.continueShopping(page);
+    });
+    it("should hover over second product and click 'Add to cart'", async () => {
+      await browserFunctions.addProductToCart(page, 3);
+      await browserFunctions.continueShopping(page);
+    });
+
+    it("should Click 'View Cart' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "cart");
+    });
+
+    let cartProductHandlesList: ElementHandle[];
+    it("should verify both products are added to Cart", async () => {
+      const cartProductSelector = 'tr[id^="product"]';
+      cartProductHandlesList = await page.$$(cartProductSelector);
+      assert.equal(cartProductHandlesList.length, 2);
+    });
+
+    it("should verify their prices, quantity and total price", async () => {
+      const prodInfoInfo = [
+        {
+          price: "400",
+          quantity: "1",
+          totalPrice: "400",
+        },
+        {
+          price: "1000",
+          quantity: "1",
+          totalPrice: "1000",
+        },
+      ];
+
+      for (let i = 0; i < prodInfoInfo.length; i++) {
+        const expectedDetails = prodInfoInfo[i];
+        const actualDetails = await browserFunctions.getProductDetailsFromHandle(
+          cartProductHandlesList[i] as ElementHandle<HTMLTableRowElement>
+        );
+        assert.deepStrictEqual(actualDetails, expectedDetails);
       }
     });
 
@@ -560,9 +638,51 @@ describe("automationExercise - Test cases", () => {
     });
   });
 
-  describe("Test Case 11: Verify Subscription in Cart page", () => {});
-  describe("", () => {});
-  describe("", () => {});
+  describe("Test Case 13: Verify Product quantity in Cart", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+    });
+
+    it("should click 'View Product' for any product on home page", async () => {
+      //
+      await pageHelper.clickAndWaitForNavigation(page, 'a[href="/product_details/1"]');
+    });
+
+    // let element: ElementHandle<HTMLDivElement> | null = null;
+    it("should verify product detail is opened", async () => {
+      try {
+        await page.waitForSelector("div.product-details", { timeout: 5000 });
+      } catch (_) {
+        assert.fail("Product details page is not open!");
+      }
+    });
+
+    let quantity = "4";
+    it("should Increase quantity to 4", async () => {
+      const selector = "#quantity";
+      await pageHelper.clearInputField(page, selector);
+      await pageHelper.typeText(page, "#quantity", quantity);
+    });
+
+    it("should click 'Add to cart' button", async () => {
+      const btn = await pageHelper.clickUntilSelectorAppears(page, "button.cart", "div.modal-footer > button", 5000);
+      await btn?.click();
+    });
+
+    it("should click 'View Cart' button", async () => {
+      await browserFunctions.accessNavbarMenu(page, "cart");
+    });
+
+    it("should verify that product is displayed in cart page with exact quantity", async () => {
+      const details = await browserFunctions.getProductDetails(page, "1");
+      assert.equal(details.quantity, quantity);
+    });
+
+    it("should close page", async () => {
+      await page.close();
+    });
+  });
+
   describe("", () => {});
   describe("", () => {});
   describe("", () => {});

@@ -1,4 +1,4 @@
-import { Browser, Page } from "puppeteer";
+import { Browser, ElementHandle, Page } from "puppeteer";
 import UtilityClass from "../../utils/UtilityClass";
 import assert from "node:assert";
 import Helpers from "./Helpers";
@@ -99,9 +99,80 @@ export default class BrowserFunctions {
     assert.equal(text?.toUpperCase(), "ALL PRODUCTS");
   }
 
+  async verifySubscriptionText(page: Page) {
+    const sel = ".single-widget h2";
+    const text = await pageHelper.getTextContent(page, sel);
+    assert.equal(text?.toUpperCase(), "SUBSCRIPTION");
+  }
+
   async verifyNewUserSignupText(page: Page) {
     const signUpText = await pageHelper.getTextContent(page, ".signup-form > h2");
     assert.equal(signUpText, "New User Signup!");
+  }
+
+  async verifySubscriptionMessage(page: Page) {
+    const sel = "#success-subscribe > div";
+    const text = await pageHelper.getTextContent(page, sel);
+    const isVisible = await pageHelper.elementIsVisible(page, sel); // should be visible
+    if (text && isVisible) {
+      assert.equal(text, "You have been successfully subscribed!");
+      assert.equal(isVisible, true);
+    } else {
+      assert.fail("Test failed!");
+    }
+  }
+
+  async addProductToCart(page: Page, productNumber: number): Promise<void> {
+    const addToCartBtnSelector = `.productinfo a[data-product-id="${productNumber}"]`;
+    const firstProductSelector = `div.features_items > div:nth-child(${productNumber + 2})`; // Adjust the selector as per the structure
+
+    const elHandle = await page.waitForSelector(firstProductSelector);
+
+    if (elHandle) {
+      await elHandle.hover();
+      await pageHelper.waitAndClick(page, addToCartBtnSelector);
+    } else {
+      throw new Error(`Product with number ${productNumber} not found.`);
+    }
+  }
+
+  async continueShopping(page: Page) {
+    const continueBtnSelector = "div.modal-footer > button";
+    const continueBtnHandle = await pageHelper.waitForElement(page, continueBtnSelector, 10000);
+    await continueBtnHandle?.click();
+  }
+
+  ///????
+  async getProductDetails(page: Page, productId: string) {
+    const productSelector = `tr[id="product-${productId}"]`;
+
+    const productDetails = await page.$eval(productSelector, (el) => {
+      const price = el.querySelector(".cart_price > p")?.textContent?.trim().split(" ")[1];
+      const quantity = el.querySelector(".cart_quantity > button")?.textContent?.trim();
+      const totalPrice = el.querySelector(".cart_total > p")?.textContent?.trim().split(" ")[1];
+
+      return { price, quantity, totalPrice };
+    });
+
+    return productDetails;
+  }
+
+  async getProductDetailsFromHandle(productHandle: ElementHandle<Element>) {
+    const productDetails = await productHandle.evaluate((el) => {
+      const price = el.querySelector(".cart_price > p")?.textContent?.trim().split(" ")[1];
+      const quantity = el.querySelector(".cart_quantity > button")?.textContent?.trim();
+      const totalPrice = el.querySelector(".cart_total > p")?.textContent?.trim().split(" ")[1];
+
+      return { price, quantity, totalPrice };
+    });
+
+    return productDetails;
+  }
+
+  async subscribeEmail(page: Page, email: string) {
+    // click
+    await page.type("#susbscribe_email", email);
+    await page.click("#subscribe");
   }
 
   async autoLogin(page: Page, email: string, passwd: string): Promise<void> {

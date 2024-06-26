@@ -18,7 +18,7 @@
     "key": "C:/Users/Lisi/Desktop/UtilityClass/src/test-certs/decrypted-key.pem"
   },
   "puppeteerLaunchOptions": {
-    "headless": true,
+    "headless": false,
     "defaultViewport": null,
     "slowMo": 0,
     "ignoreHTTPSErrors": true,
