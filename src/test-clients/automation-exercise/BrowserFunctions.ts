@@ -8,28 +8,64 @@ const pageHelper = new UtilityClass();
 const helpers = new Helpers();
 
 export default class BrowserFunctions {
-  async verifyInlineColorIsOrange(page: Page, selector: string) {
+  private url: string;
+  private _homePage?: HomePage;
+  private _products?: Products;
+  private _loginSignUp?: LoginSignUp;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  get homePage(): HomePage {
+    if (!this._homePage) {
+      this._homePage = new HomePage(this.url);
+    }
+    return this._homePage;
+  }
+
+  get products(): Products {
+    if (!this._products) {
+      this._products = new Products();
+    }
+    return this._products;
+  }
+
+  get loginSignUp(): LoginSignUp {
+    if (!this._loginSignUp) {
+      this._loginSignUp = new LoginSignUp();
+    }
+    return this._loginSignUp;
+  }
+}
+
+class HomePage {
+  private url: string = "";
+  constructor(url: string) {
+    this.url = url;
+  }
+  async goToHomePage(browser: Browser, userAgent: UserAgent): Promise<Page> {
+    const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+    await this.visitHomePage(page);
+    return page;
+  }
+
+  async visitHomePage(page: Page) {
+    // go to page
+    await pageHelper.loadPage(page, this.url);
+
+    // home page test
+    const homePageSelector = 'li a[href="/"]';
+    await this.headerVerifyOrangeInlineColor(page, homePageSelector);
+  }
+
+  async headerVerifyOrangeInlineColor(page: Page, selector: string) {
     const elementColor = await pageHelper.getInlineStylePropertyValue(page, selector, "color");
     assert.equal(elementColor, "orange");
   }
 
-  async createPageObjectAndGoToHomePage(browser: Browser, url: string, userAgent: UserAgent): Promise<Page> {
-    const page = await browser.newPage();
-    await page.setUserAgent(userAgent.random().toString());
-    await this.visitHomePage(page, url);
-    return page;
-  }
-
-  async visitHomePage(page: Page, url: string) {
-    // go to page
-    await pageHelper.loadPage(page, url);
-
-    // home page test
-    const homePageSelector = 'li a[href="/"]';
-    await this.verifyInlineColorIsOrange(page, homePageSelector);
-  }
-
-  async accessNavbarMenu(
+  async headerAccessNavbarMenu(
     page: Page,
     link: "home" | "products" | "cart" | "signup/login" | "test_cases" | "api_testing" | "contact_us"
   ): Promise<void> {
@@ -46,71 +82,65 @@ export default class BrowserFunctions {
     switch (link) {
       case "home":
         await pageHelper.waitAndClick(page, selectors.home);
-        await this.verifyInlineColorIsOrange(page, selectors.home);
+        await this.headerVerifyOrangeInlineColor(page, selectors.home);
         break;
 
       case "products":
         await pageHelper.waitAndClick(page, selectors.products);
-        await this.verifyInlineColorIsOrange(page, selectors.products);
+        await this.headerVerifyOrangeInlineColor(page, selectors.products);
         break;
 
       case "cart":
         await pageHelper.waitAndClick(page, selectors.cart);
-        await this.verifyInlineColorIsOrange(page, selectors.cart);
+        await this.headerVerifyOrangeInlineColor(page, selectors.cart);
         break;
 
       case "signup/login":
         await pageHelper.waitAndClick(page, selectors.signupLogin);
-        await this.verifyInlineColorIsOrange(page, selectors.signupLogin);
+        await this.headerVerifyOrangeInlineColor(page, selectors.signupLogin);
         break;
 
       case "test_cases":
         await pageHelper.waitAndClick(page, selectors.testCases);
-        await this.verifyInlineColorIsOrange(page, selectors.testCases);
+        await this.headerVerifyOrangeInlineColor(page, selectors.testCases);
         break;
 
       case "api_testing":
         await pageHelper.waitAndClick(page, selectors.apiTesting);
-        await this.verifyInlineColorIsOrange(page, selectors.apiTesting);
+        await this.headerVerifyOrangeInlineColor(page, selectors.apiTesting);
         break;
 
       case "contact_us":
         await pageHelper.waitAndClick(page, selectors.contactUs);
-        await this.verifyInlineColorIsOrange(page, selectors.contactUs);
+        await this.headerVerifyOrangeInlineColor(page, selectors.contactUs);
         break;
 
       default:
         console.warn(`Unknown link: ${link}, defaulting to home`);
         await pageHelper.waitAndClick(page, selectors.home);
-        await this.verifyInlineColorIsOrange(page, selectors.home);
+        await this.headerVerifyOrangeInlineColor(page, selectors.home);
         break;
     }
   }
 
-  async verifyLoginToYourAccountText(page: Page) {
-    const loginFormTextSelector = ".login-form > h2";
-    const text = await pageHelper.getTextContent(page, loginFormTextSelector);
-    assert.equal(text, "Login to your account");
+  async headerVerifyLoggedUser(page: Page, userEmail: string) {
+    const selector = "ul > li:nth-child(10) > a";
+    const text = await pageHelper.getTextContent(page, selector);
+    assert.equal(text, `Logged in as ${userEmail.split("@")[0]}`);
   }
 
-  async verifyAllProductsPage(page: Page) {
-    const allProductsTextSelector = ".padding-right > div > h2";
-    const text = await pageHelper.getTextContent(page, allProductsTextSelector);
-    assert.equal(text?.toUpperCase(), "ALL PRODUCTS");
+  async headerDeleteAccount(page: Page) {
+    const selector = 'a[href="/delete_account"]';
+    await pageHelper.clickAndWaitForNavigation(page, selector);
   }
 
-  async verifySubscriptionText(page: Page) {
+  async footerVerifySubscriptionText(page: Page) {
     const sel = ".single-widget h2";
     const text = await pageHelper.getTextContent(page, sel);
     assert.equal(text?.toUpperCase(), "SUBSCRIPTION");
   }
 
-  async verifyNewUserSignupText(page: Page) {
-    const signUpText = await pageHelper.getTextContent(page, ".signup-form > h2");
-    assert.equal(signUpText, "New User Signup!");
-  }
-
-  async verifySubscriptionMessage(page: Page) {
+  async footerVerifySubscriptionMessage(page: Page) {
     const sel = "#success-subscribe > div";
     const text = await pageHelper.getTextContent(page, sel);
     const isVisible = await pageHelper.elementIsVisible(page, sel); // should be visible
@@ -122,7 +152,21 @@ export default class BrowserFunctions {
     }
   }
 
-  async addProductToCart(page: Page, productNumber: number): Promise<void> {
+  async footerSubscribeEmail(page: Page, email: string) {
+    // click
+    await page.type("#susbscribe_email", email);
+    await page.click("#subscribe");
+  }
+}
+
+class Products {
+  async verifyAllProductsPageText(page: Page) {
+    const allProductsTextSelector = ".padding-right > div > h2";
+    const text = await pageHelper.getTextContent(page, allProductsTextSelector);
+    assert.equal(text?.toUpperCase(), "ALL PRODUCTS");
+  }
+
+  async addProduct(page: Page, productNumber: number): Promise<void> {
     const addToCartBtnSelector = `.productinfo a[data-product-id="${productNumber}"]`;
     const firstProductSelector = `div.features_items > div:nth-child(${productNumber + 2})`; // Adjust the selector as per the structure
 
@@ -142,8 +186,7 @@ export default class BrowserFunctions {
     await continueBtnHandle?.click();
   }
 
-  ///????
-  async getProductDetails(page: Page, productId: string) {
+  async cartGetProductDetails(page: Page, productId: string) {
     const productSelector = `tr[id="product-${productId}"]`;
 
     const productDetails = await page.$eval(productSelector, (el) => {
@@ -157,7 +200,7 @@ export default class BrowserFunctions {
     return productDetails;
   }
 
-  async getProductDetailsFromHandle(productHandle: ElementHandle<Element>) {
+  async cartGetProductDetailsFromHandle(productHandle: ElementHandle<Element>) {
     const productDetails = await productHandle.evaluate((el) => {
       const price = el.querySelector(".cart_price > p")?.textContent?.trim().split(" ")[1];
       const quantity = el.querySelector(".cart_quantity > button")?.textContent?.trim();
@@ -168,11 +211,53 @@ export default class BrowserFunctions {
 
     return productDetails;
   }
+}
 
-  async subscribeEmail(page: Page, email: string) {
-    // click
-    await page.type("#susbscribe_email", email);
-    await page.click("#subscribe");
+class LoginSignUp {
+  async quickEnroll(page: Page): Promise<string> {
+    //
+    const signUpSelector = 'li a[href="/login"]';
+    await pageHelper.waitAndClick(page, signUpSelector);
+    //
+    const email = helpers.getEmail();
+    const nameSelector = 'input[data-qa="signup-name"]';
+    const emailSelector = 'input[data-qa="signup-email"]';
+    const name = email.split("@")[0];
+    //
+    await pageHelper.typeText(page, nameSelector, name);
+    await pageHelper.typeText(page, emailSelector, email);
+
+    //
+    await this.clickLoginOrSignupButton(page, "signup");
+
+    //
+    await this.selectTitle(page, "Mr");
+    await pageHelper.typeText(page, "#password", "1234");
+    await this.selectDateOfBirth(page, "25", "8", "1984");
+
+    //
+    await this.fillAddressInformation(page);
+
+    //
+    const selector = 'button[data-qa="create-account"]';
+    await pageHelper.clickAndWaitForNavigation(page, selector);
+
+    //
+    const selectorContinue = 'a[data-qa="continue-button"]';
+    await pageHelper.clickAndWaitForNavigation(page, selectorContinue);
+
+    //
+    const selectorLoginText = "ul > li:nth-child(10) > a";
+    const text = await pageHelper.getTextContent(page, selectorLoginText);
+    assert.equal(text, `Logged in as ${email.split("@")[0]}`);
+
+    //
+
+    const logoutSel = 'a[href="/logout"]';
+    await pageHelper.clickAndWaitForNavigation(page, logoutSel);
+
+    //
+    return email;
   }
 
   async autoLogin(page: Page, email: string, passwd: string): Promise<void> {
@@ -192,20 +277,9 @@ export default class BrowserFunctions {
     await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0", timeout: 10000 }), page.click(loginBtn)]);
   }
 
-  async verifyLoggedInUser(page: Page, userEmail: string) {
-    const selector = "ul > li:nth-child(10) > a";
-    const text = await pageHelper.getTextContent(page, selector);
-    assert.equal(text, `Logged in as ${userEmail.split("@")[0]}`);
-  }
-
-  async deleteAccount(page: Page) {
-    const selector = 'a[href="/delete_account"]';
-    await pageHelper.clickAndWaitForNavigation(page, selector);
-  }
-
-  async clickSignUp(page: Page) {
-    const signUpBtnSelector = 'button[data-qa="signup-button"]';
-    await pageHelper.clickAndWaitForNavigation(page, signUpBtnSelector);
+  async clickLoginOrSignupButton(page: Page, button: "signup" | "login") {
+    const btnSelector = `button[data-qa="${button}-button"]`;
+    await pageHelper.clickAndWaitForNavigation(page, btnSelector);
   }
 
   async selectTitle(page: Page, title: "Mr" | "Mrs") {
@@ -213,18 +287,20 @@ export default class BrowserFunctions {
     await pageHelper.waitAndClick(page, selector);
   }
 
-  async selectDateOfBirth(page: Page) {
-    const days = "#days";
-    const month = "#months";
-    const year = "#years";
+  async selectDateOfBirth(page: Page, day: string, month: string, year: string) {
+    const daysSelector = "#days";
+    const monthsSelector = "#months";
+    const yearsSelector = "#years";
 
-    const daysEl = await page.$(days);
-    const monthEl = await page.$(month);
-    const yearEl = await page.$(year);
+    const daysEl = await page.$(daysSelector);
+    const monthsEl = await page.$(monthsSelector);
+    const yearsEl = await page.$(yearsSelector);
 
-    await daysEl?.select("25");
-    await monthEl?.select("5");
-    await yearEl?.select("1984");
+    if (daysEl && monthsEl && yearsEl) {
+      await daysEl.select(day);
+      await monthsEl.select(month);
+      await yearsEl.select(year);
+    }
   }
 
   async fillAddressInformation(page: Page) {
@@ -251,49 +327,14 @@ export default class BrowserFunctions {
     await pageHelper.typeText(page, nr, "string");
   }
 
-  async quickEnroll(page: Page): Promise<string> {
-    //
-    const signUpSelector = 'li a[href="/login"]';
-    await pageHelper.waitAndClick(page, signUpSelector);
-    //
-    const email = helpers.getEmail();
-    const nameSelector = 'input[data-qa="signup-name"]';
-    const emailSelector = 'input[data-qa="signup-email"]';
-    const name = email.split("@")[0];
-    //
-    await pageHelper.typeText(page, nameSelector, name);
-    await pageHelper.typeText(page, emailSelector, email);
+  async verifyLoginToYourAccountText(page: Page) {
+    const loginFormTextSelector = ".login-form > h2";
+    const text = await pageHelper.getTextContent(page, loginFormTextSelector);
+    assert.equal(text, "Login to your account");
+  }
 
-    //
-    await this.clickSignUp(page);
-
-    //
-    await this.selectTitle(page, "Mr");
-    await pageHelper.typeText(page, "#password", "1234");
-    await this.selectDateOfBirth(page);
-
-    //
-    await this.fillAddressInformation(page);
-
-    //
-    const selector = 'button[data-qa="create-account"]';
-    await pageHelper.clickAndWaitForNavigation(page, selector);
-
-    //
-    const selectorContinue = 'a[data-qa="continue-button"]';
-    await pageHelper.clickAndWaitForNavigation(page, selectorContinue);
-
-    //
-    const selectorLoginText = "ul > li:nth-child(10) > a";
-    const text = await pageHelper.getTextContent(page, selectorLoginText);
-    assert.equal(text, `Logged in as ${email.split("@")[0]}`);
-
-    //
-
-    const logoutSel = 'a[href="/logout"]';
-    await pageHelper.clickAndWaitForNavigation(page, logoutSel);
-
-    //
-    return email;
+  async verifyNewUserSignupText(page: Page) {
+    const signUpText = await pageHelper.getTextContent(page, ".signup-form > h2");
+    assert.equal(signUpText, "New User Signup!");
   }
 }

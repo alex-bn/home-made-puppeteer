@@ -10,7 +10,6 @@ import puppeteer from "puppeteer-extra";
 import Adblocker from "puppeteer-extra-plugin-adblocker";
 
 describe("automationExercise - Test cases", () => {
-  const URL = settings.testUrls.automationExercise.webAppUrl;
   let browserFunctions: BrowserFunctions;
   let pageHelper: UtilityClass;
   let userAgent: UserAgent;
@@ -20,7 +19,7 @@ describe("automationExercise - Test cases", () => {
 
   before(async () => {
     pageHelper = new UtilityClass();
-    browserFunctions = new BrowserFunctions();
+    browserFunctions = new BrowserFunctions(settings.testUrls.automationExercise.webAppUrl);
     userAgent = new UserAgent();
     helpers = new Helpers();
     puppeteer.use(Adblocker({ blockTrackers: true }));
@@ -37,15 +36,15 @@ describe("automationExercise - Test cases", () => {
     let email: string;
 
     it("should verify that home page is visible", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "signup/login");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'New User Signup!' is visible", async () => {
-      await browserFunctions.verifyNewUserSignupText(page);
+      await browserFunctions.loginSignUp.verifyNewUserSignupText(page);
     });
 
     it("should enter name & email address", async () => {
@@ -60,7 +59,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should click 'Signup' button", async () => {
-      await browserFunctions.clickSignUp(page);
+      await browserFunctions.loginSignUp.clickLoginOrSignupButton(page, "signup");
     });
 
     it("should verify that 'ENTER ACCOUNT INFORMATION' is visible", async () => {
@@ -75,7 +74,7 @@ describe("automationExercise - Test cases", () => {
 
     it("should fill details: Title, Name, Email, Password, Date of birth", async () => {
       // title
-      await browserFunctions.selectTitle(page, "Mr");
+      await browserFunctions.loginSignUp.selectTitle(page, "Mr");
 
       // name - already filled
       const name = await pageHelper.getInputValue(page, "#name");
@@ -89,7 +88,7 @@ describe("automationExercise - Test cases", () => {
       await pageHelper.typeText(page, "#password", "1234");
 
       // date of birth
-      await browserFunctions.selectDateOfBirth(page);
+      await browserFunctions.loginSignUp.selectDateOfBirth(page, "25", "5", "1984");
     });
 
     it("should select checkbox 'Sign up for our newsletter!'", async () => {
@@ -103,7 +102,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should fill details: First name, Last name, Company, Address, Address2, Country, State, City, Zipcode, Mobile Number", async () => {
-      await browserFunctions.fillAddressInformation(page);
+      await browserFunctions.loginSignUp.fillAddressInformation(page);
     });
 
     it("should click 'Create Account button'", async () => {
@@ -122,11 +121,11 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify that 'Logged in as username' is visible", async () => {
-      await browserFunctions.verifyLoggedInUser(page, email);
+      await browserFunctions.homePage.headerVerifyLoggedUser(page, email);
     });
 
     it("should click 'Delete Account' button", async () => {
-      await browserFunctions.deleteAccount(page);
+      await browserFunctions.homePage.headerDeleteAccount(page);
     });
 
     it("should verify that 'ACCOUNT DELETED!' is visible and click 'Continue' button", async () => {
@@ -151,16 +150,16 @@ describe("automationExercise - Test cases", () => {
   describe("Test Case 2: Login User with correct email and password", () => {
     let user: string;
     it("should create a test user", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
-      user = await browserFunctions.quickEnroll(page);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
+      user = await browserFunctions.loginSignUp.quickEnroll(page);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "signup/login");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'Login to your account' is visible", async () => {
-      await browserFunctions.verifyLoginToYourAccountText(page);
+      await browserFunctions.loginSignUp.verifyLoginToYourAccountText(page);
     });
 
     it("should enter correct email address and password", async () => {
@@ -177,11 +176,11 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify that 'Logged in as username' is visible", async () => {
-      await browserFunctions.verifyLoggedInUser(page, user);
+      await browserFunctions.homePage.headerVerifyLoggedUser(page, user);
     });
 
     it("should click 'Delete Account' button", async () => {
-      await browserFunctions.deleteAccount(page);
+      await browserFunctions.homePage.headerDeleteAccount(page);
     });
 
     it("should verify that 'ACCOUNT DELETED!' is visible", async () => {
@@ -198,15 +197,15 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 3: Login User with incorrect email and password", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "signup/login");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'Login to your account' is visible", async () => {
-      await browserFunctions.verifyLoginToYourAccountText(page);
+      await browserFunctions.loginSignUp.verifyLoginToYourAccountText(page);
     });
 
     it("should enter incorrect email address and password", async () => {
@@ -235,19 +234,19 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 4: Logout User", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "signup/login");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'Login to your account' is visible", async () => {
-      await browserFunctions.verifyLoginToYourAccountText(page);
+      await browserFunctions.loginSignUp.verifyLoginToYourAccountText(page);
     });
 
     it("should enter correct email address and password, and login", async () => {
-      await browserFunctions.autoLogin(
+      await browserFunctions.loginSignUp.autoLogin(
         page,
         settings.testUrls.automationExercise.email,
         settings.testUrls.automationExercise.password
@@ -255,7 +254,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify that 'Logged in as username' is visible", async () => {
-      await browserFunctions.verifyLoggedInUser(page, settings.testUrls.automationExercise.email);
+      await browserFunctions.homePage.headerVerifyLoggedUser(page, settings.testUrls.automationExercise.email);
     });
 
     it("should click 'Logout' button", async () => {
@@ -265,7 +264,7 @@ describe("automationExercise - Test cases", () => {
 
     it("should verify that user is navigated to login page", async () => {
       const loginPageNavBarSelector = 'a[href="/login"]';
-      await browserFunctions.verifyInlineColorIsOrange(page, loginPageNavBarSelector);
+      await browserFunctions.homePage.headerVerifyOrangeInlineColor(page, loginPageNavBarSelector);
     });
 
     it("should close page", async () => {
@@ -275,15 +274,15 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 5: Register User with existing email", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Signup / Login' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "signup/login");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "signup/login");
     });
 
     it("should verify 'New User Signup!' is visible", async () => {
-      await browserFunctions.verifyNewUserSignupText(page);
+      await browserFunctions.loginSignUp.verifyNewUserSignupText(page);
     });
 
     it("should enter name & email of an already registered account", async () => {
@@ -298,7 +297,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should click 'Signup' button", async () => {
-      await browserFunctions.clickSignUp(page);
+      await browserFunctions.loginSignUp.clickLoginOrSignupButton(page, "signup");
     });
 
     it("should verify error 'Email Address already exist!' is visible", async () => {
@@ -314,7 +313,7 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 6: Contact Us Form", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click OK on page dialog - event listener before actual event", async () => {
@@ -326,7 +325,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should click on 'Contact Us' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "contact_us");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "contact_us");
     });
 
     it("should verify 'GET IN TOUCH' is visible", async () => {
@@ -374,7 +373,7 @@ describe("automationExercise - Test cases", () => {
       await pageHelper.clickAndWaitForNavigation(page, homeBtnSelector);
       //
       const homePageOrangeSelector = 'li a[href="/"]';
-      await browserFunctions.verifyInlineColorIsOrange(page, homePageOrangeSelector);
+      await browserFunctions.homePage.headerVerifyOrangeInlineColor(page, homePageOrangeSelector);
     });
 
     it("should close page", async () => {
@@ -384,11 +383,11 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 7: Verify Test Cases Page", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Test Cases' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "test_cases");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "test_cases");
     });
 
     it("should verify user is navigated to test cases page successfully", async () => {
@@ -406,15 +405,15 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 8: Verify All Products and product detail page", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Products' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "products");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "products");
     });
 
     it("should verify user is navigated to ALL PRODUCTS page successfully", async () => {
-      await browserFunctions.verifyAllProductsPage(page);
+      await browserFunctions.products.verifyAllProductsPageText(page);
     });
 
     it("should verify that the products list is visible", async () => {
@@ -469,15 +468,15 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 9: Search Product", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click on 'Products' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "products");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "products");
     });
 
     it("should verify user is navigated to ALL PRODUCTS page successfully", async () => {
-      await browserFunctions.verifyAllProductsPage(page);
+      await browserFunctions.products.verifyAllProductsPageText(page);
     });
 
     const searchedValue = "blue";
@@ -519,7 +518,7 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 10: Verify Subscription in home page", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should scroll down to footer", async () => {
@@ -527,7 +526,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify text 'SUBSCRIPTION'", async () => {
-      await browserFunctions.verifySubscriptionText(page);
+      await browserFunctions.homePage.footerVerifySubscriptionText(page);
     });
 
     it("should enter email address in input and click arrow button", async () => {
@@ -536,11 +535,11 @@ describe("automationExercise - Test cases", () => {
       const isVisible = await pageHelper.elementIsVisible(page, sel);
       assert.equal(isVisible, false);
 
-      await browserFunctions.subscribeEmail(page, settings.testUrls.automationExercise.email);
+      await browserFunctions.homePage.footerSubscribeEmail(page, settings.testUrls.automationExercise.email);
     });
 
     it("should verify success message 'You have been successfully subscribed!' is visible", async () => {
-      await browserFunctions.verifySubscriptionMessage(page);
+      await browserFunctions.homePage.footerVerifySubscriptionMessage(page);
     });
 
     it("should close page", async () => {
@@ -550,11 +549,11 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 11: Verify Subscription in Cart page", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click 'Cart' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "cart");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "cart");
     });
 
     it("should scroll down to footer", async () => {
@@ -562,15 +561,15 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify text 'SUBSCRIPTION'", async () => {
-      await browserFunctions.verifySubscriptionText(page);
+      await browserFunctions.homePage.footerVerifySubscriptionText(page);
     });
 
     it("should enter email address in input and click arrow button", async () => {
-      await browserFunctions.subscribeEmail(page, settings.testUrls.automationExercise.email);
+      await browserFunctions.homePage.footerSubscribeEmail(page, settings.testUrls.automationExercise.email);
     });
 
     it("should verify success message 'You have been successfully subscribed!' is visible", async () => {
-      await browserFunctions.verifySubscriptionMessage(page);
+      await browserFunctions.homePage.footerVerifySubscriptionMessage(page);
     });
 
     it("should close page", async () => {
@@ -580,27 +579,27 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 12: Add Products in Cart", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click 'Products' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "products");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "products");
     });
 
     it("should hover over first product and click 'Add to cart'", async () => {
-      await browserFunctions.addProductToCart(page, 2);
+      await browserFunctions.products.addProduct(page, 2);
     });
 
     it("should click 'Continue Shopping' button", async () => {
-      await browserFunctions.continueShopping(page);
+      await browserFunctions.products.continueShopping(page);
     });
     it("should hover over second product and click 'Add to cart'", async () => {
-      await browserFunctions.addProductToCart(page, 3);
-      await browserFunctions.continueShopping(page);
+      await browserFunctions.products.addProduct(page, 3);
+      await browserFunctions.products.continueShopping(page);
     });
 
     it("should Click 'View Cart' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "cart");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "cart");
     });
 
     let cartProductHandlesList: ElementHandle[];
@@ -626,7 +625,7 @@ describe("automationExercise - Test cases", () => {
 
       for (let i = 0; i < prodInfoInfo.length; i++) {
         const expectedDetails = prodInfoInfo[i];
-        const actualDetails = await browserFunctions.getProductDetailsFromHandle(
+        const actualDetails = await browserFunctions.products.cartGetProductDetailsFromHandle(
           cartProductHandlesList[i] as ElementHandle<HTMLTableRowElement>
         );
         assert.deepStrictEqual(actualDetails, expectedDetails);
@@ -640,7 +639,7 @@ describe("automationExercise - Test cases", () => {
 
   describe("Test Case 13: Verify Product quantity in Cart", () => {
     it("should navigate to home page", async () => {
-      page = await browserFunctions.createPageObjectAndGoToHomePage(browser, URL, userAgent);
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
     });
 
     it("should click 'View Product' for any product on home page", async () => {
@@ -670,11 +669,11 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should click 'View Cart' button", async () => {
-      await browserFunctions.accessNavbarMenu(page, "cart");
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "cart");
     });
 
     it("should verify that product is displayed in cart page with exact quantity", async () => {
-      const details = await browserFunctions.getProductDetails(page, "1");
+      const details = await browserFunctions.products.cartGetProductDetails(page, "1");
       assert.equal(details.quantity, quantity);
     });
 
