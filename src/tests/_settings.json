@@ -7,8 +7,20 @@
       "url": "https://automationexercise.com/api",
       "email": "user614363@yopmail.com",
       "password": "1234",
-      "webAppUrl": "http://automationexercise.com"
+      "webAppUrl": "http://automationexercise.com",
+      "enrollInfo": {
+        "firstName": "First",
+        "lastName": "Last",
+        "company": "Acme Company",
+        "address1": "176 Thiel Locks, DuBuqueport, TN 95603",
+        "address2": "Suite 533 29571 Genaro Square, Deeannaview, MD 78040-5735",
+        "state": "Israel",
+        "city": "City",
+        "zipp": "1234",
+        "phone": "1234567890"
+      }
     },
+
     "tlsClientAuthentication": "https://server.cryptomix.com/"
   },
   "certs": {

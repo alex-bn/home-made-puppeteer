@@ -111,8 +111,7 @@ describe("automationExercise - Test cases", () => {
     });
 
     it("should verify that 'ACCOUNT CREATED!' is visible", async () => {
-      const text = await pageHelper.getTextContent(page, ' h2[data-qa="account-created"] > b');
-      assert.equal(text?.toUpperCase(), "ACCOUNT CREATED!");
+      await browserFunctions.loginSignUp.verifyAccountCreatedText(page);
     });
 
     it("should click 'Continue' button", async () => {
@@ -151,7 +150,7 @@ describe("automationExercise - Test cases", () => {
     let user: string;
     it("should create a test user", async () => {
       page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
-      user = await browserFunctions.loginSignUp.quickEnroll(page);
+      user = await browserFunctions.loginSignUp.quickEnroll(page, true);
     });
 
     it("should click on 'Signup / Login' button", async () => {
@@ -682,7 +681,164 @@ describe("automationExercise - Test cases", () => {
     });
   });
 
-  describe("", () => {});
+  describe("Test Case 14: Place Order: Register while Checkout", () => {
+    it("should navigate to home page", async () => {
+      page = await browserFunctions.homePage.goToHomePage(browser, userAgent);
+    });
+
+    // added product 6 & 7
+    it("should add products to cart", async () => {
+      for (let i = 6; i <= 7; i++) {
+        await browserFunctions.products.addProduct(page, i);
+        await browserFunctions.products.continueShopping(page);
+      }
+    });
+
+    it("should click 'Cart' button", async () => {
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "cart");
+    });
+
+    it("should verify that cart page is displayed", async () => {
+      const text = await pageHelper.getTextContent(page, 'li[class="active"]');
+      assert.equal(text, "Shopping Cart");
+    });
+
+    it("should click Proceed To Checkout", async () => {
+      await browserFunctions.products.cartClickCheckout(page);
+    });
+
+    it("should click 'Register / Login' button", async () => {
+      await pageHelper.waitAndClick(page, 'a[href="/login"] > u');
+    });
+
+    let email: string;
+    it("should fill all details in Signup and create account", async () => {
+      email = await browserFunctions.loginSignUp.quickEnroll(page, false);
+    });
+
+    it("should verify 'ACCOUNT CREATED!' and click 'Continue' button", async () => {
+      await browserFunctions.loginSignUp.verifyAccountCreatedText(page);
+
+      // click continue
+      const selectorContinue = 'a[data-qa="continue-button"]';
+      await pageHelper.clickAndWaitForNavigation(page, selectorContinue);
+    });
+
+    it("should verify 'Logged in as username' at top", async () => {
+      await browserFunctions.homePage.headerVerifyLoggedUser(page, email);
+    });
+
+    it("should click 'Cart' button", async () => {
+      await browserFunctions.homePage.headerAccessNavbarMenu(page, "cart");
+    });
+
+    it("should click 'Proceed To Checkout' button", async () => {
+      await browserFunctions.products.cartClickCheckout(page);
+    });
+
+    it("should verify Address Details and Review Your Order", async () => {
+      // address details verification
+      const deliveryAddressHandle = await page.waitForSelector("#address_delivery");
+      const invoiceAddressHandle = await page.waitForSelector("#address_invoice");
+
+      const list = [deliveryAddressHandle, invoiceAddressHandle];
+      for (const handle of list) {
+        const addressDetails = await handle?.evaluate((el) => {
+          const firstLastNames = el.querySelector("li:nth-child(2)")?.textContent;
+          const company = el.querySelector("li:nth-child(3)")?.textContent;
+          const address1 = el.querySelector("li:nth-child(4)")?.textContent;
+          const address2 = el.querySelector("li:nth-child(5)")?.textContent;
+          const cityStateZipp = el.querySelector("li:nth-child(6)")?.textContent?.replace(/[\n\t]/g, "");
+
+          const country = el.querySelector("li:nth-child(7)")?.textContent;
+          const phone = el.querySelector("li:nth-child(8)")?.textContent;
+
+          return { firstLastNames, company, address1, address2, cityStateZipp, country, phone };
+        });
+
+        // data user was enrolled with
+        const firstLastNames = `Mr. ${settings.testUrls.automationExercise.enrollInfo.firstName} ${settings.testUrls.automationExercise.enrollInfo.lastName}`;
+        const company = `${settings.testUrls.automationExercise.enrollInfo.company}`;
+        const address1 = `${settings.testUrls.automationExercise.enrollInfo.address1}`;
+        const address2 = `${settings.testUrls.automationExercise.enrollInfo.address2}`;
+        const cityStateZipp = `${settings.testUrls.automationExercise.enrollInfo.city} ${settings.testUrls.automationExercise.enrollInfo.state}${settings.testUrls.automationExercise.enrollInfo.zipp}`;
+        const country = `${settings.testUrls.automationExercise.enrollInfo.state}`;
+        const phone = `${settings.testUrls.automationExercise.enrollInfo.phone}`;
+
+        // test
+        assert.deepEqual(addressDetails, {
+          firstLastNames,
+          company,
+          address1,
+          address2,
+          cityStateZipp,
+          country,
+          phone,
+        });
+      }
+
+      // review order for product 6 & 7
+      let totalPrice = 0;
+      for (let i = 6; i <= 7; i++) {
+        const handle = await page.$(`#product-${i}`);
+        const details = await browserFunctions.products.cartGetProductDetailsFromHandle(
+          handle as ElementHandle<Element>
+        );
+        assert.equal(details.quantity, 1);
+        totalPrice = totalPrice + Number(details.price);
+      }
+      assert.equal(totalPrice, 1400);
+    });
+
+    it("should enter description in comment text area and click 'Place Order'", async () => {
+      await page.type(
+        "#ordermsg > textarea",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+      );
+
+      await page.click('a[href="/payment"]');
+    });
+
+    it("should enter payment details: Name on Card, Card Number, CVC, Expiration date", async () => {
+      await page.type('input[data-qa="name-on-card"]', "First Last");
+      await page.type('input[data-qa="card-number"]', "1234567890987654");
+      await page.type('input[data-qa="cvc"]', "123");
+      await page.type('input[data-qa="expiry-month"]', "4");
+      await page.type('input[data-qa="expiry-year"]', "2030");
+    });
+
+    it("should click 'Pay and Confirm Order' button", async () => {
+      await page.click('button[data-qa="pay-button"]');
+    });
+
+    it("should verify success message 'Your order has been placed successfully!'", async () => {
+      const text = await pageHelper.getTextContent(page, ".container .row div p");
+      assert.equal(text, "Congratulations! Your order has been confirmed!");
+    });
+
+    it("should click 'Delete Account' button", async () => {
+      await browserFunctions.homePage.headerDeleteAccount(page);
+    });
+
+    it("should verify 'ACCOUNT DELETED!' and click 'Continue' button", async () => {
+      const selector = "h2 > b";
+      const text = await pageHelper.getTextContent(page, selector);
+      assert.equal(text?.toUpperCase(), "ACCOUNT DELETED!");
+
+      const btnSelector = 'a[data-qa="continue-button"]';
+      await pageHelper.waitAndClick(page, btnSelector);
+
+      // home page test
+      const elementColor = await pageHelper.getInlineStylePropertyValue(page, 'li a[href="/"]', "color");
+      assert.equal(elementColor, "orange");
+    });
+
+    it("should close page", async () => {
+      await pageHelper.sleep(5000);
+      await page.close();
+    });
+  });
+
   describe("", () => {});
   describe("", () => {});
 });

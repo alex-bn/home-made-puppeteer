@@ -3,6 +3,7 @@ import UtilityClass from "../../utils/UtilityClass";
 import assert from "node:assert";
 import Helpers from "./Helpers";
 import UserAgent from "user-agents";
+import settings from "../../tests/_settings.json";
 
 const pageHelper = new UtilityClass();
 const helpers = new Helpers();
@@ -200,21 +201,23 @@ class Products {
     return productDetails;
   }
 
+  async cartClickCheckout(page: Page) {
+    await page.click("a.check_out");
+  }
+
   async cartGetProductDetailsFromHandle(productHandle: ElementHandle<Element>) {
     const productDetails = await productHandle.evaluate((el) => {
       const price = el.querySelector(".cart_price > p")?.textContent?.trim().split(" ")[1];
       const quantity = el.querySelector(".cart_quantity > button")?.textContent?.trim();
       const totalPrice = el.querySelector(".cart_total > p")?.textContent?.trim().split(" ")[1];
-
       return { price, quantity, totalPrice };
     });
-
     return productDetails;
   }
 }
 
 class LoginSignUp {
-  async quickEnroll(page: Page): Promise<string> {
+  async quickEnroll(page: Page, logout: true | false): Promise<string> {
     //
     const signUpSelector = 'li a[href="/login"]';
     await pageHelper.waitAndClick(page, signUpSelector);
@@ -241,6 +244,11 @@ class LoginSignUp {
     //
     const selector = 'button[data-qa="create-account"]';
     await pageHelper.clickAndWaitForNavigation(page, selector);
+
+    // If logout is false, return after creating the account
+    if (!logout) {
+      return email;
+    }
 
     //
     const selectorContinue = 'a[data-qa="continue-button"]';
@@ -315,16 +323,16 @@ class LoginSignUp {
     const zipCode = "#zipcode";
     const nr = "#mobile_number";
 
-    await pageHelper.typeText(page, firstName, "string");
-    await pageHelper.typeText(page, lastName, "string");
-    await pageHelper.typeText(page, company, "string");
-    await pageHelper.typeText(page, address, "Address * (Street address, P.O. Box, Company name, etc.)");
-    await pageHelper.typeText(page, address2, "Address * (Street address, P.O. Box, Company name, etc.)");
-    await page.select(country, "Israel");
-    await pageHelper.typeText(page, state, "string");
-    await pageHelper.typeText(page, city, "string");
-    await pageHelper.typeText(page, zipCode, "string");
-    await pageHelper.typeText(page, nr, "string");
+    await pageHelper.typeText(page, firstName, settings.testUrls.automationExercise.enrollInfo.firstName);
+    await pageHelper.typeText(page, lastName, settings.testUrls.automationExercise.enrollInfo.lastName);
+    await pageHelper.typeText(page, company, settings.testUrls.automationExercise.enrollInfo.company);
+    await pageHelper.typeText(page, address, settings.testUrls.automationExercise.enrollInfo.address1);
+    await pageHelper.typeText(page, address2, settings.testUrls.automationExercise.enrollInfo.address2);
+    await page.select(country, settings.testUrls.automationExercise.enrollInfo.state);
+    await pageHelper.typeText(page, state, settings.testUrls.automationExercise.enrollInfo.state);
+    await pageHelper.typeText(page, city, settings.testUrls.automationExercise.enrollInfo.city);
+    await pageHelper.typeText(page, zipCode, settings.testUrls.automationExercise.enrollInfo.zipp);
+    await pageHelper.typeText(page, nr, settings.testUrls.automationExercise.enrollInfo.phone);
   }
 
   async verifyLoginToYourAccountText(page: Page) {
@@ -336,5 +344,10 @@ class LoginSignUp {
   async verifyNewUserSignupText(page: Page) {
     const signUpText = await pageHelper.getTextContent(page, ".signup-form > h2");
     assert.equal(signUpText, "New User Signup!");
+  }
+
+  async verifyAccountCreatedText(page: Page) {
+    const text = await pageHelper.getTextContent(page, ' h2[data-qa="account-created"] > b');
+    assert.equal(text?.toUpperCase(), "ACCOUNT CREATED!");
   }
 }
